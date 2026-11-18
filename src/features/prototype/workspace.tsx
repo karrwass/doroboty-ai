@@ -1,30 +1,62 @@
+/**
+ * Person selection and the candidate workspace in DoRoboty Design.
+ * Candidate screens use register "Komfort"; the employer list of candidates uses "Praca".
+ */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
-import { CheckCircle2, FileText } from "lucide-react";
+import { CheckCircle2, FileText, ShieldCheck } from "lucide-react";
 import { ConfettiBurst, type ConfettiOrigin } from "@/components/confetti-burst";
 import { BackLink } from "@/components/back-link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StepBar } from "@/design-system/components";
 import { JobCard } from "@/features/jobs/job-card";
 import { ApplicationOfferPreview } from "@/features/jobs/application-offer-preview";
 import { usePrototype } from "./store";
-import { currentPerson, publishedJobs, stageLabels, MIN_APPLICATION_ANSWER_LENGTH } from "./model";
-import { PageTitle, Empty, NotFound, Notice } from "./shell";
+import {
+  currentPerson,
+  publishedJobs,
+  stageLabels,
+  MIN_APPLICATION_ANSWER_LENGTH,
+  type Stage,
+} from "./model";
+import { PageTitle, Empty, NotFound, Notice, Page } from "./shell";
 import { CvAttachment } from "./cv-attachment";
 import { MatchScore } from "./match-score";
 import { RecruitingApplication } from "./recruiting-application";
 import { CandidateApplication } from "./candidate-application";
+import { EmployerDashboard } from "./employer";
+import { candidateSteps } from "./marketplace";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="field">
+    <label className="ds-field">
       <span>{label}</span>
       {children}
     </label>
   );
 }
+/** Stage as a status pill: waiting (rust), positive, rejected, neutral. */
+export function stageTone(stage: Stage) {
+  return stage === "continued" || stage === "hired"
+    ? "pos"
+    : stage === "rejected"
+      ? "err"
+      : stage === "withdrawn"
+        ? "neutral"
+        : "warn";
+}
+export function StagePill({ stage }: { stage: Stage }) {
+  return (
+    <span className="ds-pill" data-tone={stageTone(stage)}>
+      {stageLabels[stage]}
+    </span>
+  );
+}
+const roleNames = { candidate: "Kandydat", employer: "Pracodawca", operator: "Prowadzący" };
+
 export function PersonPicker() {
   const { state, run } = usePrototype();
   const navigate = useNavigate();
@@ -37,18 +69,21 @@ export function PersonPicker() {
       : state.people;
   const safeNext = next && /^\/(?!\/)/.test(next) && !next.startsWith("/auth") ? next : null;
   return (
-    <section className="prototype-section max-w-4xl">
-      <h1>Wybierz osobę</h1>
-      <p className="mt-4 mb-8 text-muted-foreground">
-        Wybierz profil, z którego chcesz korzystać w prototypie. Hasło nie jest potrzebne.
-      </p>
-      <div className="grid gap-5 sm:grid-cols-2">
+    <Page wide>
+      <PageTitle lead="Wybierz profil, z którego chcesz korzystać w prototypie. Hasło nie jest potrzebne.">
+        Wybierz osobę
+      </PageTitle>
+      <div className="ds-grid3">
         {people.map((person) => (
-          <article key={person.id} className="prototype-panel">
-            <h2 className="text-xl">{person.name}</h2>
-            <p className="my-4 text-muted-foreground">{person.headline}</p>
+          <article key={person.id} className="ds-card">
+            <div className="ds-card-head">
+              <h2 style={{ fontSize: 19 }}>{person.name}</h2>
+              <span className="ds-pill" data-tone="neutral">
+                {roleNames[person.role]}
+              </span>
+            </div>
+            <p style={{ marginTop: 0, color: "var(--ink-2)" }}>{person.headline}</p>
             <Button
-              variant="outline"
               onClick={() => {
                 run({ type: "select_person", id: person.id });
                 navigate(
@@ -65,7 +100,8 @@ export function PersonPicker() {
           </article>
         ))}
       </div>
-    </section>
+      <p className="ds-caption">osoby i firmy: PRZYKŁAD · wybór osoby zastępuje logowanie</p>
+    </Page>
   );
 }
 export function RequireRole({
@@ -80,16 +116,22 @@ export function RequireRole({
   if (!person) return <PersonPicker />;
   if (role && person.role !== role)
     return (
-      <Empty>
-        <p className="mb-4">
-          Ten widok jest dostępny dla{" "}
-          {role === "candidate" ? "kandydata" : role === "employer" ? "pracodawcy" : "prowadzącego"}
-          .
-        </p>
-        <Link className={buttonVariants({ variant: "outline" })} to="/auth/sign-in">
-          Zmień osobę
-        </Link>
-      </Empty>
+      <Page>
+        <Empty>
+          <p>
+            Ten widok jest dostępny dla{" "}
+            {role === "candidate"
+              ? "kandydata"
+              : role === "employer"
+                ? "pracodawcy"
+                : "prowadzącego"}
+            .
+          </p>
+          <Link className="ds-btn ds-btn-secondary" to="/auth/sign-in">
+            Zmień osobę
+          </Link>
+        </Empty>
+      </Page>
     );
   return children;
 }
@@ -97,46 +139,67 @@ export function WorkspaceHome() {
   const { state } = usePrototype();
   const person = currentPerson(state)!;
   if (person.role === "operator") return <Navigate to="/app/case" replace />;
-  const candidate = person.role === "candidate";
-  const applications = state.applications.filter((a) =>
-    candidate ? a.candidateId === person.id : a.companyId === person.companyId,
-  );
+  if (person.role === "employer") return <EmployerDashboard />;
+  const applications = state.applications.filter((a) => a.candidateId === person.id);
+  const saved = state.saved.filter((x) => x.candidateId === person.id).length;
   return (
-    <>
-      <PageTitle>Witaj, {person.name.split(" ")[0]}</PageTitle>
-      <div className="grid gap-5 sm:grid-cols-3">
-        {[
-          ["Aplikacje", applications.length],
-          [
-            candidate ? "Zapisane oferty" : "Twoje oferty",
-            candidate
-              ? state.saved.filter((x) => x.candidateId === person.id).length
-              : state.jobs.filter((x) => x.companyId === person.companyId).length,
-          ],
-          [
-            "W trakcie procesu",
-            applications.filter((x) => !["rejected", "withdrawn", "hired"].includes(x.stage))
-              .length,
-          ],
-        ].map(([label, value]) => (
-          <div className="prototype-panel" key={label}>
-            <p className="text-muted-foreground">{label}</p>
-            <strong className="mt-3 block text-3xl">{value}</strong>
-          </div>
-        ))}
-      </div>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link className={buttonVariants()} to={candidate ? "/oferty" : "/app/kandydaci"}>
-          {candidate ? "Przeglądaj oferty" : "Przejrzyj kandydatów"}
-        </Link>
-        <Link
-          className={buttonVariants({ variant: "outline" })}
-          to={candidate ? "/app/profil" : "/app/oferty"}
-        >
-          {candidate ? "Edytuj profil" : "Zarządzaj ofertami"}
-        </Link>
-      </div>
-    </>
+    <Page>
+      <PageTitle
+        lead={`Dzień dobry, ${person.name.split(" ")[0]}. Tu widzisz swoje aplikacje i zapisane oferty.`}
+      >
+        Twoje konto
+      </PageTitle>
+      <section className="ds-card" aria-labelledby="home-apps">
+        <h2 id="home-apps" className="ds-h2c">
+          <span className="ds-icon-tile">
+            <FileText aria-hidden="true" />
+          </span>
+          Aplikacje
+        </h2>
+        {applications.length ? (
+          <ul className="ds-list">
+            {applications.map((a) => (
+              <li key={a.id}>
+                <div className="ds-row-main">
+                  <Link className="ds-row-title" to={`/app/aplikacje/${a.id}`}>
+                    {a.jobTitle}
+                  </Link>
+                  <div className="ds-meta">
+                    {state.companies.find((x) => x.id === a.companyId)?.name}
+                  </div>
+                </div>
+                <StagePill stage={a.stage} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ds-sentence">
+            Nie masz jeszcze aplikacji. Jeśli znajdziesz ofertę, możesz zaaplikować w kilka minut.
+          </p>
+        )}
+        <div className="ds-actions">
+          <Link className="ds-btn ds-btn-primary" to="/oferty">
+            Przeglądaj oferty
+          </Link>
+          <Link className="ds-btn ds-btn-secondary" to="/app/profil">
+            Edytuj profil
+          </Link>
+        </div>
+      </section>
+      <section className="ds-card ds-section" aria-labelledby="home-saved">
+        <h2 id="home-saved" className="ds-h2c">
+          Zapisane oferty
+        </h2>
+        <p style={{ margin: 0 }}>
+          {saved === 0
+            ? "Nie masz zapisanych ofert."
+            : `Masz ${saved} ${saved === 1 ? "zapisaną ofertę" : "zapisane oferty"}.`}{" "}
+          <Link className="ds-link" style={{ minHeight: 0 }} to="/app/zapisane">
+            Zobacz zapisane
+          </Link>
+        </p>
+      </section>
+    </Page>
   );
 }
 export function ProfilePage({ preview = false }: { preview?: boolean }) {
@@ -160,12 +223,17 @@ export function ProfilePage({ preview = false }: { preview?: boolean }) {
       setMessage("Profil został zapisany.");
   }
   return (
-    <>
+    <Page>
       <PageTitle
+        lead={
+          preview
+            ? "Tak widzi Cię firma, do której aplikujesz."
+            : "Firma zobaczy te dane i CV razem z aplikacją."
+        }
         action={
           <Link
             to={preview ? "/app/profil" : "/app/profil/podglad"}
-            className={buttonVariants({ variant: "outline" })}
+            className="ds-btn ds-btn-secondary"
           >
             {preview ? "Edytuj profil" : "Podgląd profilu"}
           </Link>
@@ -174,13 +242,15 @@ export function ProfilePage({ preview = false }: { preview?: boolean }) {
         {preview ? person.name : "Twój profil"}
       </PageTitle>
       {preview ? (
-        <div className="prototype-panel space-y-4">
-          <h2>{person.headline}</h2>
-          <p>{person.location}</p>
-          <p>{person.bio}</p>
-        </div>
+        <section className="ds-card" aria-label="Podgląd profilu">
+          <h2 className="ds-h2c">{person.headline}</h2>
+          <p className="ds-meta" style={{ margin: 0 }}>
+            {person.location}
+          </p>
+          <p style={{ marginBottom: 0 }}>{person.bio}</p>
+        </section>
       ) : (
-        <form onSubmit={save} className="prototype-panel prototype-form">
+        <form onSubmit={save} className="ds-card ds-form" aria-label="Twój profil">
           <Field label="Imię i nazwisko">
             <Input name="name" required maxLength={200} defaultValue={person.name} />
           </Field>
@@ -193,18 +263,27 @@ export function ProfilePage({ preview = false }: { preview?: boolean }) {
           <Field label="O mnie">
             <Textarea name="bio" maxLength={12000} defaultValue={person.bio} />
           </Field>
-          <Button type="submit">Zapisz profil</Button>
-          {message && <p role="status">{message}</p>}
+          <div className="ds-actions" style={{ marginTop: 0 }}>
+            <Button type="submit">Zapisz profil</Button>
+          </div>
+          {message && (
+            <p role="status" className="ds-meta" style={{ margin: 0 }}>
+              {message}
+            </p>
+          )}
         </form>
       )}
-      <section className="prototype-panel mt-6">
-        <h2 className="mb-4 flex items-center gap-2">
-          <FileText className="size-5" />
+      <section className="ds-card ds-section" aria-labelledby="profile-cv">
+        <h2 id="profile-cv" className="ds-h2c">
+          <span className="ds-icon-tile">
+            <FileText aria-hidden="true" />
+          </span>
           CV
         </h2>
         <CvAttachment candidateId={person.id} fallbackText={person.cv} />
+        <p className="ds-caption">CV przykładowe · PRZYKŁAD</p>
       </section>
-    </>
+    </Page>
   );
 }
 export function SavedPage() {
@@ -214,19 +293,23 @@ export function SavedPage() {
     state.saved.some((x) => x.candidateId === person.id && x.jobId === job.id),
   );
   return (
-    <>
+    <Page>
       <PageTitle>Zapisane oferty</PageTitle>
       {jobs.length ? (
-        jobs.map((job) => <JobCard key={job.id} job={job} saved />)
+        <div className="ds-joblist">
+          {jobs.map((job) => (
+            <JobCard key={job.id} job={job} saved />
+          ))}
+        </div>
       ) : (
         <Empty>
-          <p className="mb-4">Nie masz jeszcze zapisanych ofert.</p>
-          <Link className={buttonVariants({ variant: "outline" })} to="/oferty">
+          <p>Nie masz jeszcze zapisanych ofert. Zapisz ofertę, żeby wrócić do niej później.</p>
+          <Link className="ds-btn ds-btn-primary" to="/oferty">
             Przeglądaj oferty
           </Link>
         </Empty>
       )}
-    </>
+    </Page>
   );
 }
 export function ApplyPage() {
@@ -262,12 +345,12 @@ export function ApplyPage() {
   );
   if (existing && !submitted)
     return (
-      <section className="prototype-section">
+      <Page>
         <Notice>Aplikacja na tę ofertę została już wysłana.</Notice>
-        <Link to={`/app/aplikacje/${existing.id}`} className={buttonVariants()}>
+        <Link to={`/app/aplikacje/${existing.id}`} className="ds-btn ds-btn-primary">
           Zobacz aplikację
         </Link>
-      </section>
+      </Page>
     );
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -292,122 +375,125 @@ export function ApplyPage() {
     }
   }
   return (
-    <section className="pp-container application-page">
+    <Page>
       <BackLink to={`/oferty/${job.slug}`}>Wróć do oferty</BackLink>
-      <header className="application-header">
-        <h1>Aplikuj na ofertę</h1>
-        <p>Sprawdź ofertę i opowiedz, dlaczego pasujesz do tej roli.</p>
-      </header>
-      <div className="application-layout">
-        <ApplicationOfferPreview job={job} />
-        <form
-          noValidate
-          onSubmit={submit}
-          className="record-sheet application-form"
-          aria-labelledby="application-form-title"
-        >
-          <header className="application-form-intro">
-            <h2 id="application-form-title">Twoja aplikacja</h2>
-            <p>
-              Aplikujesz jako <strong>{person.name}</strong>.
-            </p>
-          </header>
-          <section className="application-form-section" aria-labelledby="application-cv-title">
-            <h3 id="application-cv-title">Twoje CV</h3>
-            <p className="application-help">Do aplikacji dołączymy CV z Twojego profilu.</p>
-            <CvAttachment
-              candidateId={person.id}
-              fallbackText={person.cv}
-              layout="row"
-              contextLabel="CV z Twojego profilu"
+      <StepBar label="Etapy aplikowania" steps={candidateSteps} current="application" />
+      <h1 className="ds-title">Aplikuj na ofertę</h1>
+      <p className="ds-lead">
+        Jeśli wyślesz aplikację, {job.company.name} zobaczy Twoją odpowiedź i CV z profilu. Możesz
+        ją wycofać w każdej chwili.
+      </p>
+      <ApplicationOfferPreview job={job} />
+      <form
+        noValidate
+        onSubmit={submit}
+        className="ds-card ds-form ds-section"
+        aria-labelledby="application-form-title"
+      >
+        <div>
+          <h2 id="application-form-title" className="ds-h2c" style={{ marginBottom: 4 }}>
+            Twoja aplikacja
+          </h2>
+          <p className="ds-meta" style={{ margin: 0 }}>
+            Aplikujesz jako <strong>{person.name}</strong>.
+          </p>
+        </div>
+        <section aria-labelledby="application-cv-title">
+          <h3 id="application-cv-title" style={{ margin: "0 0 4px", fontSize: 16 }}>
+            Twoje CV
+          </h3>
+          <p className="ds-meta" style={{ margin: "0 0 var(--space-2)" }}>
+            Do aplikacji dołączymy CV z Twojego profilu.
+          </p>
+          <CvAttachment
+            candidateId={person.id}
+            fallbackText={person.cv}
+            layout="row"
+            contextLabel="CV z Twojego profilu"
+          />
+        </section>
+        <section aria-label="Odpowiedź do aplikacji" className="ds-form" style={{ gap: 6 }}>
+          <Field label="Dlaczego pasujesz do tej roli?">
+            <Textarea
+              disabled={submitted}
+              ref={answerInput}
+              required
+              minLength={MIN_APPLICATION_ANSWER_LENGTH}
+              maxLength={12000}
+              rows={6}
+              aria-invalid={answerInvalid || undefined}
+              aria-describedby="application-answer-help"
+              value={answer}
+              onChange={(e) => {
+                setAnswer(e.target.value);
+                setConsent(false);
+              }}
             />
-          </section>
-          <section
-            className="application-form-section application-answer"
-            aria-label="Odpowiedź do aplikacji"
+          </Field>
+          <p
+            id="application-answer-help"
+            role={answerInvalid ? "alert" : undefined}
+            className={answerInvalid ? "ds-error" : "ds-meta"}
+            style={{ margin: 0 }}
           >
-            <Field label="Dlaczego pasujesz do tej roli?">
-              <Textarea
-                disabled={submitted}
-                ref={answerInput}
-                required
-                minLength={MIN_APPLICATION_ANSWER_LENGTH}
-                maxLength={12000}
-                aria-invalid={answerInvalid || undefined}
-                aria-describedby="application-answer-help"
-                value={answer}
-                onChange={(e) => {
-                  setAnswer(e.target.value);
-                  setConsent(false);
-                }}
-              />
-            </Field>
-            <p
-              id="application-answer-help"
-              role={answerInvalid ? "alert" : undefined}
-              className={answerInvalid ? "error-message" : "text-sm text-muted-foreground"}
-            >
-              {answerInvalid
-                ? `Odpowiedź jest za krótka. Wpisz co najmniej ${MIN_APPLICATION_ANSWER_LENGTH} znaków (obecnie: ${answerLength}).`
-                : `Minimum ${MIN_APPLICATION_ANSWER_LENGTH} znaków. Obecnie: ${answerLength}.`}
-            </p>
-          </section>
-          <div className="application-form-section application-submit">
-            <label className="application-consent">
-              <Checkbox
-                id="application-consent"
-                disabled={submitted}
-                checked={consent}
-                onCheckedChange={(v) => setConsent(v)}
-                aria-invalid={consentInvalid || undefined}
-                aria-describedby={consentInvalid ? "application-consent-error" : undefined}
-                aria-label="Zatwierdzam treść i przesłanie aplikacji"
-              />
-              <span>
-                Zatwierdzam treść aplikacji i przesłanie profilu oraz przykładowego CV pracodawcy.
-              </span>
-            </label>
-            {consentInvalid && (
-              <p id="application-consent-error" className="error-message" role="alert">
-                Zatwierdź treść aplikacji i jej przesłanie pracodawcy.
-              </p>
-            )}
-            <div className="application-actions">
-              <Button
-                ref={sendButton}
-                type="submit"
-                disabled={submitted}
-                className="application-send"
-              >
-                {submitted && <CheckCircle2 aria-hidden="true" />}
-                {submitted ? "Wysłano!" : "Wyślij aplikację"}
-              </Button>
-              <Button
-                type="button"
-                disabled={submitted}
-                variant="outline"
-                onClick={() => {
-                  if (run({ type: "draft", jobId: job.id, notes, generated, answer }))
-                    setMessage("Szkic został zapisany.");
-                }}
-              >
-                Zapisz szkic
-              </Button>
-            </div>
-            <p
-              role="status"
-              className={submitted || !message ? "sr-only" : "application-save-status"}
-            >
-              {submitted ? "Wysłano aplikację. Otwieramy listę Twoich aplikacji." : message}
-            </p>
-            <p className="application-help">
-              Prototyp: aplikacja zostaje w tym przeglądarkowym scenariuszu.
-            </p>
-          </div>
-        </form>
-      </div>
+            {answerInvalid
+              ? `Odpowiedź jest za krótka. Wpisz co najmniej ${MIN_APPLICATION_ANSWER_LENGTH} znaków (obecnie: ${answerLength}).`
+              : `Minimum ${MIN_APPLICATION_ANSWER_LENGTH} znaków. Obecnie: ${answerLength}.`}
+          </p>
+        </section>
+        <label className="ds-check">
+          <Checkbox
+            id="application-consent"
+            disabled={submitted}
+            checked={consent}
+            onCheckedChange={(v) => setConsent(v)}
+            aria-invalid={consentInvalid || undefined}
+            aria-describedby={consentInvalid ? "application-consent-error" : undefined}
+            aria-label="Zatwierdzam treść i przesłanie aplikacji"
+          />
+          <span>
+            Zatwierdzam treść aplikacji i przesłanie profilu oraz przykładowego CV pracodawcy.
+          </span>
+        </label>
+        {consentInvalid && (
+          <p id="application-consent-error" className="ds-error" role="alert">
+            Zatwierdź treść aplikacji i jej przesłanie pracodawcy.
+          </p>
+        )}
+        <div className="ds-actions" style={{ marginTop: 0 }}>
+          <Button ref={sendButton} type="submit" disabled={submitted}>
+            {submitted && <CheckCircle2 aria-hidden="true" />}
+            {submitted ? "Wysłano!" : "Wyślij aplikację"}
+          </Button>
+          <Button
+            type="button"
+            disabled={submitted}
+            variant="outline"
+            onClick={() => {
+              if (run({ type: "draft", jobId: job.id, notes, generated, answer }))
+                setMessage("Szkic został zapisany.");
+            }}
+          >
+            Zapisz szkic
+          </Button>
+        </div>
+        <p
+          role="status"
+          className={submitted || !message ? "sr-only" : "ds-meta"}
+          style={{ margin: 0 }}
+        >
+          {submitted ? "Wysłano aplikację. Otwieramy listę Twoich aplikacji." : message}
+        </p>
+        <p className="ds-safe" style={{ margin: 0 }}>
+          <ShieldCheck aria-hidden="true" />
+          <span>
+            Twoje CV zobaczy tylko {job.company.name}. Prototyp: aplikacja zostaje w tej
+            przeglądarce.
+          </span>
+        </p>
+      </form>
       <ConfettiBurst origin={confettiOrigin} />
-    </section>
+    </Page>
   );
 }
 export function ApplicationsPage({ employer = false }: { employer?: boolean }) {
@@ -423,45 +509,78 @@ export function ApplicationsPage({ employer = false }: { employer?: boolean }) {
         .includes(query.toLocaleLowerCase("pl")),
   );
   return (
-    <>
-      <PageTitle>{employer ? "Kandydaci" : "Moje aplikacje"}</PageTitle>
+    <Page>
+      <PageTitle
+        lead={
+          employer
+            ? "Aplikacje do ogłoszeń Twojej firmy. Match Score to ocena zgodności tekstów 0–100, nie szansa na zatrudnienie."
+            : "Stan Twoich aplikacji. Możesz wycofać aplikację, dopóki proces trwa."
+        }
+      >
+        {employer ? "Kandydaci" : "Moje aplikacje"}
+      </PageTitle>
       {params.has("wyslano") && (
         <Notice>
-          <CheckCircle2 className="inline size-5" /> Aplikacja została wysłana.
+          <CheckCircle2 className="inline size-5" aria-hidden="true" /> Aplikacja została wysłana.
+          Firma zobaczy ją w swoim panelu.
         </Notice>
       )}
-      <Field label={employer ? "Szukaj kandydata lub oferty" : "Szukaj oferty"}>
-        <Input value={query} onChange={(e) => setQuery(e.target.value)} />
-      </Field>
-      <div className="mt-6 space-y-4">
-        {applications.length ? (
-          applications.map((a) => (
-            <article className="prototype-panel" key={a.id}>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+      <div style={{ maxWidth: 420, marginBottom: "var(--space-4)" }}>
+        <Field label={employer ? "Szukaj kandydata lub oferty" : "Szukaj oferty"}>
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} />
+        </Field>
+      </div>
+      {applications.length ? (
+        <section className="ds-card" aria-label={employer ? "Lista kandydatów" : "Lista aplikacji"}>
+          <ul className="ds-list">
+            {applications.map((a) => (
+              <li key={a.id}>
+                <div className="ds-row-main">
                   <Link
-                    className="text-xl font-semibold text-[var(--gui-link)]"
+                    className="ds-row-title"
                     to={`${employer ? "/app/kandydaci" : "/app/aplikacje"}/${a.id}`}
                   >
                     {employer ? a.candidateName : a.jobTitle}
                   </Link>
-                  <p className="my-3 text-muted-foreground">
+                  <div className="ds-meta">
                     {employer
                       ? a.jobTitle
                       : state.companies.find((x) => x.id === a.companyId)?.name}
-                  </p>
-                  <p>{stageLabels[a.stage]}</p>
+                  </div>
+                  {employer && (
+                    <p
+                      style={{ margin: "var(--space-1) 0 0", color: "var(--ink-2)", fontSize: 14 }}
+                    >
+                      {a.summary}
+                    </p>
+                  )}
                 </div>
-                <MatchScore score={a.score} />
-              </div>
-              {employer && <p className="mt-4 text-muted-foreground">{a.summary}</p>}
-            </article>
-          ))
-        ) : (
-          <Empty>Brak aplikacji spełniających kryteria.</Empty>
-        )}
-      </div>
-    </>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                  <StagePill stage={a.stage} />
+                  <MatchScore score={a.score} />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="ds-caption">osoby i aplikacje: PRZYKŁAD · Match Score: DEMO</p>
+        </section>
+      ) : (
+        <Empty>
+          <p>
+            {query
+              ? "Brak aplikacji spełniających kryteria. Zmień wyszukiwanie."
+              : employer
+                ? "Brak aplikacji. Pojawią się, gdy kandydaci odpowiedzą na Twoje ogłoszenia."
+                : "Nie masz jeszcze aplikacji."}
+          </p>
+          {!employer && (
+            <Link className="ds-btn ds-btn-primary" to="/oferty">
+              Przeglądaj oferty
+            </Link>
+          )}
+        </Empty>
+      )}
+    </Page>
   );
 }
 export function ApplicationDetail({ employer = false }: { employer?: boolean }) {

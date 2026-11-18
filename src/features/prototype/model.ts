@@ -2,6 +2,7 @@ import { z } from "zod";
 import marketplace from "./data/marketplace.json" with { type: "json" };
 import people from "./data/people.json" with { type: "json" };
 import type { JobWithCompany } from "@/features/jobs/types";
+import { purchaseScenario } from "./purchase-seed";
 
 const id = z
   .string()
@@ -130,6 +131,81 @@ const draftSchema = z.object({
   generated: text,
   answer: text,
 });
+/** Single job ad, net PLN. Same list price as `single_ad` in the case purchases data. */
+export const PUBLICATION_PRICE_NET = 1620;
+export const PUBLICATION_DAYS = 30;
+export const VAT_RATE = 0.23;
+/** A repeat purchase counts when paid within this many days of the previous purchase. */
+export const REPEAT_WINDOW_DAYS = 90;
+export const blockers = ["role", "budget", "other_channel", "other"] as const;
+export type Blocker = (typeof blockers)[number];
+export const blockerLabels: Record<Blocker, string> = {
+  role: "Rola czeka na zatwierdzenie",
+  budget: "Budżet czeka na zatwierdzenie",
+  other_channel: "Szukam inaczej (polecenia, inny portal)",
+  other: "Inny powód",
+};
+export const declineReasons = ["no_role", "no_budget", "other_channel", "other"] as const;
+export type DeclineReason = (typeof declineReasons)[number];
+export const declineReasonLabels: Record<DeclineReason, string> = {
+  no_role: "Nie ma zatwierdzonej roli",
+  no_budget: "Nie ma budżetu",
+  other_channel: "Szukamy innym kanałem",
+  other: "Inny powód",
+};
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** Outcome of an expired publication, shown to the person who approves the next purchase. */
+const publicationResultSchema = z.object({
+  jobId: id,
+  applications: z.number().int().nonnegative(),
+  interviews: z.number().int().nonnegative(),
+  continued: z.number().int().nonnegative(),
+  medianFirstContactDays: z.number().nonnegative().nullable(),
+  purchasedAt: z.iso.datetime(),
+  source: text,
+});
+const purchaseEventSchema = z.object({
+  type: z.enum([
+    "draft_saved",
+    "reason_given",
+    "request_created",
+    "request_opened",
+    "request_approved",
+    "request_declined",
+    "decision_day",
+    "date_moved",
+    "paid",
+  ]),
+  at: z.iso.datetime(),
+  note: text,
+});
+const purchaseRequestSchema = z.object({
+  token: id,
+  approver: z.string().trim().max(200),
+  message: text,
+  status: z.enum(["ready", "opened", "approved", "declined"]),
+  createdAt: z.iso.datetime(),
+  openedAt: z.iso.datetime().optional(),
+  decidedAt: z.iso.datetime().optional(),
+  declineReason: z.enum(declineReasons).optional(),
+  declineNote: text.optional(),
+});
+/** Everything between saving the next job draft and paying for its publication. */
+const purchaseFlowSchema = z.object({
+  jobId: id,
+  companyId: id,
+  previousJobId: id.optional(),
+  blocker: z.enum(blockers).optional(),
+  decisionDate: day.optional(),
+  reminder: z.boolean(),
+  decisionDayReached: z.boolean(),
+  request: purchaseRequestSchema.optional(),
+  paidAt: z.iso.datetime().optional(),
+  events: z.array(purchaseEventSchema).max(100),
+});
+export type PurchaseFlow = z.infer<typeof purchaseFlowSchema>;
+export type PurchaseEvent = PurchaseFlow["events"][number];
+export type PublicationResult = z.infer<typeof publicationResultSchema>;
 export const stateSchema = z
   .object({
     version: z.literal(1),
@@ -140,6 +216,8 @@ export const stateSchema = z
     applications: z.array(applicationSchema).max(2000),
     saved: z.array(z.object({ candidateId: id, jobId: id })).max(5000),
     drafts: z.array(draftSchema).max(1000),
+    publicationResults: z.array(publicationResultSchema).max(1000).default([]),
+    purchaseFlows: z.array(purchaseFlowSchema).max(1000).default([]),
   })
   .superRefine((s, ctx) => {
     const problem = (message: string) => ctx.addIssue({ code: "custom", message });
@@ -184,6 +262,18 @@ export const stateSchema = z
         if (after.at < before.at) problem("Invalid event order");
       }
     }
+    const tokens = new Set<string>();
+    for (const flow of s.purchaseFlows) {
+      if (jobs.get(flow.jobId)?.companyId !== flow.companyId) problem("Invalid purchase reference");
+      if (flow.request) {
+        if (tokens.has(flow.request.token)) problem("Duplicate request token");
+        tokens.add(flow.request.token);
+      }
+    }
+    if (new Set(s.purchaseFlows.map((x) => x.jobId)).size !== s.purchaseFlows.length)
+      problem("Duplicate purchase flow");
+    for (const r of s.publicationResults)
+      if (!jobs.has(r.jobId)) problem("Invalid publication result reference");
     for (const list of [s.saved, s.drafts]) {
       const pairs = new Set<string>();
       for (const item of list) {
@@ -213,17 +303,55 @@ export type Action =
   | { type: "stage"; applicationId: string; stage: Stage; note: string }
   | { type: "withdraw"; applicationId: string }
   | { type: "publish"; job: z.infer<typeof jobSchema> }
-  | { type: "company"; name: string; description: string };
+  | { type: "company"; name: string; description: string }
+  | { type: "save_job_draft"; job: z.infer<typeof jobSchema> }
+  | { type: "draft_reason"; jobId: string; blocker: Blocker; decisionDate: string }
+  | { type: "request_approval"; jobId: string; approver: string; message: string }
+  | { type: "request_opened"; token: string }
+  | {
+      type: "request_decision";
+      token: string;
+      decision: "approved" | "declined";
+      reason?: DeclineReason;
+      note?: string;
+    }
+  | { type: "decision_day"; jobId: string }
+  | { type: "move_date"; jobId: string; decisionDate: string }
+  | { type: "pay_and_publish"; jobId: string };
 
-export function initialState(): State {
+export function addDays(iso: string, days: number) {
+  return new Date(new Date(iso).getTime() + days * 86_400_000).toISOString();
+}
+export function grossPrice(net = PUBLICATION_PRICE_NET) {
+  return Math.round(net * (1 + VAT_RATE) * 100) / 100;
+}
+export function previousResult(state: State, flow: PurchaseFlow) {
+  const job = state.jobs.find((x) => x.id === flow.previousJobId);
+  const result = state.publicationResults.find((x) => x.jobId === flow.previousJobId);
+  return job && result ? { job, result } : null;
+}
+/** Last day a payment still counts as a repeat purchase (90 days after the previous one). */
+export function repeatWindowEnd(state: State, flow: PurchaseFlow) {
+  const previous = previousResult(state, flow);
+  return previous ? addDays(previous.result.purchasedAt, REPEAT_WINDOW_DAYS) : null;
+}
+export function flowByToken(state: State, token: string) {
+  return state.purchaseFlows.find((x) => x.request?.token === token);
+}
+
+export function initialState(now = new Date().toISOString()): State {
+  const scenario = purchaseScenario(now);
   const state = stateSchema.parse({
     version: 1,
     activePersonId: null,
     ...marketplace,
+    jobs: [...marketplace.jobs, ...scenario.jobs],
     people,
     applications: [],
     saved: [],
     drafts: [],
+    publicationResults: scenario.publicationResults,
+    purchaseFlows: scenario.purchaseFlows,
   });
   const bob = state.people.find((x) => x.id === "candidate-marek")!;
   const job = state.jobs[0];
@@ -344,6 +472,116 @@ export function transition(
       if (s.jobs[index].companyId !== p.companyId) fail("Nie można zmienić tej oferty.");
       s.jobs[index] = job;
     } else s.jobs.unshift(job);
+  } else if (action.type === "save_job_draft") {
+    const p = employer();
+    const job = jobSchema.parse({ ...action.job, publicationStatus: "draft" });
+    if (job.companyId !== p.companyId) fail("Wybierz ofertę własnej firmy.");
+    const index = s.jobs.findIndex((x) => x.id === job.id);
+    if (index >= 0) {
+      if (s.jobs[index].companyId !== p.companyId || s.jobs[index].publicationStatus !== "draft")
+        fail("Szkic można zapisać tylko dla nieopublikowanej oferty.");
+      s.jobs[index] = job;
+    } else s.jobs.unshift(job);
+    let flow = s.purchaseFlows.find((x) => x.jobId === job.id);
+    if (!flow) {
+      const previous = s.jobs
+        .filter((x) => x.companyId === job.companyId && x.publicationStatus === "expired")
+        .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))[0];
+      flow = {
+        jobId: job.id,
+        companyId: job.companyId,
+        previousJobId: previous?.id,
+        reminder: false,
+        decisionDayReached: false,
+        events: [],
+      };
+      s.purchaseFlows.push(flow);
+    }
+    flow.events.push({ type: "draft_saved", at: now, note: "" });
+  } else if (action.type === "draft_reason" || action.type === "move_date") {
+    const p = employer();
+    const flow = s.purchaseFlows.find(
+      (x) => x.jobId === action.jobId && x.companyId === p.companyId && !x.paidAt,
+    );
+    if (!flow) return fail("Nie znaleziono szkicu.");
+    flow.decisionDate = day.parse(action.decisionDate);
+    flow.reminder = true;
+    flow.decisionDayReached = false;
+    if (action.type === "draft_reason") {
+      flow.blocker = z.enum(blockers).parse(action.blocker);
+      flow.events.push({ type: "reason_given", at: now, note: blockerLabels[flow.blocker] });
+    } else flow.events.push({ type: "date_moved", at: now, note: flow.decisionDate });
+  } else if (action.type === "request_approval") {
+    const p = employer();
+    const flow = s.purchaseFlows.find(
+      (x) => x.jobId === action.jobId && x.companyId === p.companyId && !x.paidAt,
+    );
+    if (!flow) return fail("Nie znaleziono szkicu.");
+    if (!flow.previousJobId) fail("Wniosek wymaga wyniku poprzedniej publikacji.");
+    flow.request = purchaseRequestSchema.parse({
+      token: newId,
+      approver: action.approver,
+      message: action.message,
+      status: "ready",
+      createdAt: now,
+    });
+    flow.events.push({ type: "request_created", at: now, note: action.approver.trim() });
+  } else if (action.type === "request_opened" || action.type === "request_decision") {
+    // The link itself is the authority here: the approver has no account in the prototype.
+    const flow = flowByToken(s, action.token);
+    const request = flow?.request;
+    if (!flow || !request) return fail("Ten wniosek nie istnieje albo został zastąpiony nowym.");
+    if (action.type === "request_opened") {
+      if (request.status === "ready") {
+        request.status = "opened";
+        request.openedAt = now;
+        flow.events.push({ type: "request_opened", at: now, note: "" });
+      }
+    } else {
+      if (request.status === "approved" || request.status === "declined" || flow.paidAt)
+        fail("Decyzja w sprawie tego wniosku została już zapisana.");
+      request.status = action.decision;
+      request.decidedAt = now;
+      request.openedAt ??= now;
+      if (action.decision === "declined") {
+        request.declineReason = z.enum(declineReasons).parse(action.reason);
+        request.declineNote = text.parse(action.note ?? "");
+        flow.events.push({
+          type: "request_declined",
+          at: now,
+          note: [declineReasonLabels[request.declineReason], request.declineNote]
+            .filter(Boolean)
+            .join(" · "),
+        });
+      } else flow.events.push({ type: "request_approved", at: now, note: "" });
+    }
+  } else if (action.type === "decision_day") {
+    const p = employer();
+    const flow = s.purchaseFlows.find(
+      (x) => x.jobId === action.jobId && x.companyId === p.companyId && !x.paidAt,
+    );
+    if (!flow?.reminder) return fail("Najpierw ustaw dzień decyzji.");
+    flow.decisionDayReached = true;
+    flow.events.push({ type: "decision_day", at: now, note: "" });
+  } else if (action.type === "pay_and_publish") {
+    const p = employer();
+    const flow = s.purchaseFlows.find(
+      (x) => x.jobId === action.jobId && x.companyId === p.companyId,
+    );
+    const job = s.jobs.find((x) => x.id === action.jobId && x.companyId === p.companyId);
+    if (!flow || !job || job.publicationStatus !== "draft" || flow.paidAt)
+      return fail("Ten szkic został już opublikowany.");
+    job.publicationStatus = "published";
+    job.publishedAt = now;
+    job.expiryAt = addDays(now, PUBLICATION_DAYS);
+    job.verificationStatus = "employer_verified";
+    flow.paidAt = now;
+    flow.reminder = false;
+    flow.events.push({
+      type: "paid",
+      at: now,
+      note: `${PUBLICATION_PRICE_NET} zł netto`,
+    });
   } else if (action.type === "company") {
     const p = employer();
     Object.assign(

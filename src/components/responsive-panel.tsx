@@ -1,20 +1,13 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { SlidersHorizontal, X } from "lucide-react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 const query = "(max-width: 850px)";
 function subscribe(notify: () => void) {
   const media = window.matchMedia(query);
   media.addEventListener("change", notify);
   return () => media.removeEventListener("change", notify);
 }
+/** Filters inline on wide screens; a named full-height sheet (Base UI dialog) at ≤850px. */
 export function ResponsivePanel({
   title,
   description,
@@ -34,26 +27,34 @@ export function ResponsivePanel({
   const [open, setOpen] = useState(false);
   if (!mobile) return children;
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button variant="outline" className="pp-filter-button" />}>
-        <SlidersHorizontal className="pp-icon" />
+    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+      <DialogPrimitive.Trigger className="ds-btn ds-btn-secondary">
+        <SlidersHorizontal size={16} aria-hidden="true" />
         {title}
-      </DialogTrigger>
-      <DialogContent className="pp-filter-dialog pp-dialog" showCloseButton={false}>
-        <div className="pp-dialog-heading">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogClose
-            render={<Button variant="outline" size="icon-sm" aria-label="Zamknij filtry" />}
-          >
-            ×
-          </DialogClose>
-        </div>
-        <DialogDescription className="pp-filter-help">{description}</DialogDescription>
-        <div className="pp-filter-scroll">{children}</div>
-        <div className="pp-filter-dialog-footer">
-          <DialogClose render={<Button />}>Pokaż {resultCount} ofert</DialogClose>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </DialogPrimitive.Trigger>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="ds-backdrop" />
+        <DialogPrimitive.Popup className="ds reg-komfort ds-sheet">
+          <div className="ds-sheet-head">
+            <DialogPrimitive.Title render={<h2 />}>{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Close
+              className="ds-btn ds-btn-ghost ds-btn-icon"
+              aria-label="Zamknij filtry"
+            >
+              <X size={18} aria-hidden="true" />
+            </DialogPrimitive.Close>
+          </div>
+          <DialogPrimitive.Description className="ds-meta" style={{ margin: 0 }}>
+            {description}
+          </DialogPrimitive.Description>
+          <div className="ds-sheet-body">{children}</div>
+          <div className="ds-sheet-foot">
+            <DialogPrimitive.Close className="ds-btn ds-btn-primary">
+              Pokaż {resultCount} ofert
+            </DialogPrimitive.Close>
+          </div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

@@ -14,12 +14,12 @@ export function JobPagination({
   const { page, totalPages, total, start, end } = pagination;
   if (!total) return null;
   return (
-    <div className="pp-pagination">
-      <p className="pp-page-summary" data-job-page-summary>
+    <div className="ds-pagination">
+      <p className="ds-meta" style={{ margin: 0 }} data-job-page-summary>
         Oferty {start}–{end} z {total}
       </p>
       {totalPages > 1 && (
-        <nav aria-label="Strony ofert" className="flex items-center gap-[var(--gui-space-xs)]">
+        <nav aria-label="Strony ofert">
           {page > 1 ? (
             <Link
               rel="prev"
@@ -54,8 +54,8 @@ export function JobPagination({
                   aria-label={`Strona ${number}`}
                   aria-current={page === number ? "page" : undefined}
                   className={buttonVariants({
-                    variant: page === number ? "default" : "ghost",
-                    className: "pp-page-button",
+                    variant: "outline",
+                    className: "ds-page-number",
                     size: "icon-sm",
                   })}
                 >

@@ -1,0 +1,263 @@
+/*
+ * DoRoboty Design: application record (candidate and employer views), CV file row,
+ * process history and Match Score fact. Same component in both registers; tokens change.
+ */
+.record-sheet {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+/* Status filters and section switches are underlined tabs (components.md). */
+.record-tabs {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule);
+}
+.record-tab {
+  min-height: 44px !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: none !important;
+  color: var(--ink-2) !important;
+  font-size: 15px !important;
+}
+.record-tab[aria-selected="true"],
+.record-tab[data-selected] {
+  border-bottom-color: var(--action) !important;
+  color: var(--ink) !important;
+  font-weight: var(--fw-strong) !important;
+}
+.record-reading h3 {
+  margin: 0 0 var(--space-3);
+  font-size: 17px;
+  font-weight: var(--fw-strong);
+}
+.record-reading p {
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+.record-section {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+.record-section h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 16px;
+}
+.record-footer {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+.record-caption {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--fs-meta);
+}
+.record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.record-withdrawal p {
+  margin: 0;
+}
+.record-head {
+  margin-bottom: var(--space-5);
+}
+.record-meta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.record-stage {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--r-pill-status);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 12px;
+  font-weight: 500;
+  outline-offset: 2px;
+}
+.record-stage[data-tone="pos"] {
+  background: var(--pos-soft);
+  color: var(--pos);
+}
+.record-stage[data-tone="err"] {
+  background: var(--err-soft);
+  color: var(--err);
+}
+.record-stage[data-tone="neutral"] {
+  background: var(--tag-cool);
+  color: var(--ink-2);
+}
+.record-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.reg-komfort .record-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.record-margin {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* Process history: who → what, newest last, current step marked. */
+.process-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.process-timeline li {
+  position: relative;
+  min-width: 0;
+  padding: 0 0 var(--space-4) 22px;
+}
+.process-timeline li::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+.process-timeline li::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--rule);
+}
+.process-timeline li:last-child::after {
+  display: none;
+}
+.process-timeline li[aria-current="step"]::before {
+  background: var(--action);
+  box-shadow: 0 0 0 3px var(--action-soft);
+}
+.process-timeline strong {
+  display: block;
+  font-weight: var(--fw-strong);
+}
+.process-timeline time {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--fs-meta);
+  font-variant-numeric: tabular-nums;
+}
+.process-timeline-content {
+  margin-top: var(--space-1);
+  color: var(--ink-2);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* CV file row and preview. */
+.cv-attachment {
+  display: grid;
+  gap: var(--space-3);
+}
+.cv-file-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: var(--surface);
+}
+.cv-file-row > svg {
+  flex: none;
+  color: var(--ink-2);
+}
+.cv-file-description {
+  display: grid;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.cv-file-description strong {
+  font-weight: var(--fw-strong);
+  overflow-wrap: anywhere;
+}
+.cv-file-description span {
+  color: var(--ink-3);
+  font-size: var(--fs-meta);
+}
+.cv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.cv-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.cv-preview {
+  width: 100%;
+  height: 520px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: var(--canvas);
+}
+
+/* Match Score: a fact, not a status. Neutral tag; always explained as text similarity. */
+.match-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill-status);
+  background: var(--tag-cool);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.reg-komfort .match-score {
+  background: var(--tag-warm);
+}
+
+@media (max-width: 860px) {
+  .record-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .record-sheet {
+    padding: var(--space-4);
+  }
+  .cv-preview {
+    height: 420px;
+  }
+}

@@ -8,3 +8,6 @@ artifacts/
 *.tsbuildinfo
 .env*
 npm-debug.log*
+
+# Local production-readiness report: contains personal and machine details; never commit.
+docs/production-readiness.html

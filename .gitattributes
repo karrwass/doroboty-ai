@@ -1,0 +1,9 @@
+# Keep LF in every checkout (also Windows with core.autocrlf=true):
+# format:check, design-system:check and verify:packet compare files byte-for-byte.
+* text=auto eol=lf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.woff2 binary

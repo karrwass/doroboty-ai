@@ -1,5 +1,6 @@
 import type { JobFilters } from "./types";
 import { contractLabels, functionLabels, remoteLabels, seniorityLabels } from "./presentation";
+/** One condition per group; changes apply immediately (URL owns the applied criteria). */
 export function JobFiltersForm({
   filters,
   onChange,
@@ -10,10 +11,10 @@ export function JobFiltersForm({
   onReset: () => void;
 }) {
   return (
-    <div className="pp-filter-panel">
-      <div className="pp-filter-heading">
-        <h2>Po Twojemu</h2>
-        <button className="pp-text-button" onClick={onReset}>
+    <div className="ds-filters">
+      <div className="ds-filters-head">
+        <h2>Filtry</h2>
+        <button type="button" className="ds-link" onClick={onReset}>
           Wyczyść
         </button>
       </div>
@@ -25,7 +26,7 @@ export function JobFiltersForm({
           ["function", "Funkcja", functionLabels],
         ] as const
       ).map(([key, label, options]) => (
-        <fieldset className="pp-filter-group" key={key}>
+        <fieldset className="ds-filter-group" key={key}>
           <legend>{label}</legend>
           {Object.entries(options).map(([value, text]) => (
             <label key={value}>

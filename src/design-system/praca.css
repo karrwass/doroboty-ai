@@ -1,0 +1,914 @@
+/*
+ * DoRoboty Design, register "Praca" (recruiter, budget holder).
+ * Source of truth: docs/design-system/doroboty-design/ (SKILL.md, references/components.md).
+ *
+ * Everything is scoped under .ds so screens that are not converted yet keep their
+ * previous styles. Portalled dialogs carry .ds themselves.
+ */
+
+/* ---------- root ---------- */
+.ds {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  letter-spacing: normal;
+  color: var(--ink);
+  /* Neutralise the host-wide hover fill; DS controls define their own hover. */
+  --control-hover-bg: transparent;
+  --control-hover-text: inherit;
+}
+.ds-canvas {
+  min-height: 100dvh;
+  background: var(--canvas);
+}
+.ds :is(h1, h2, h3, h4) {
+  font-family: var(--font);
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+}
+.ds :is(a, button, input, select, textarea, [role="button"], [role="checkbox"]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.ds .num,
+.ds-num {
+  font-variant-numeric: tabular-nums;
+}
+.ds-meta {
+  font-size: var(--fs-meta);
+  color: var(--ink-3);
+  letter-spacing: 0.1px;
+}
+.ds-caption {
+  margin: var(--space-3) 0 0;
+  font: 11px/1.4 var(--mono);
+  color: var(--ink-3);
+}
+.ds-label {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.05em;
+}
+.ds-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- brand and shell ---------- */
+.ds-mark {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.ds-mark rect {
+  fill: var(--ink);
+}
+.ds-on-dark .ds-mark .b1 {
+  fill: var(--cat-1);
+}
+.ds-on-dark .ds-mark .b2 {
+  fill: var(--cat-2);
+}
+.ds-on-dark .ds-mark .b3 {
+  fill: var(--cat-3);
+}
+.ds-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ds-brand .ai {
+  color: var(--ink-3);
+}
+.ds-on-dark .ds-brand .ai {
+  color: var(--on-dark-2);
+}
+.ds-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: 56px 1fr;
+  min-height: 100dvh;
+}
+.ds-appbar {
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 56px;
+  padding: 0 var(--space-5);
+  background: var(--brand-bar);
+  color: var(--on-dark);
+}
+.ds-appbar .ds-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--on-dark-rule);
+}
+.ds-appbar .ds-prod {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--on-dark-2);
+}
+.ds-appbar .ds-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  font-size: 14px;
+}
+.ds-org {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--on-dark-fill);
+  color: var(--on-dark);
+  white-space: nowrap;
+}
+.ds-org .ds-label {
+  color: var(--on-dark-2);
+}
+.ds-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--cat-2);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13px;
+  text-decoration: none;
+}
+.ds-menu-btn {
+  display: none;
+  margin-left: auto;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--on-dark);
+  font: inherit;
+  font-size: 14px;
+}
+.ds-menu-btn:hover {
+  background: var(--on-dark-fill);
+}
+.ds-side {
+  padding: 20px var(--space-4);
+  background: var(--surface);
+  border-right: 1px solid var(--rule);
+}
+.ds-side-context {
+  display: none;
+}
+.ds-nav {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-nav a {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px var(--space-3);
+  border-radius: var(--r-control);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.ds-nav a:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+/* Active item: action-soft, never yellow (yellow is the current process step). */
+.ds-nav a[aria-current="page"] {
+  background: var(--action-soft);
+  color: var(--ink);
+  font-weight: var(--fw-strong);
+}
+.ds-nav-secondary {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+}
+.ds-main {
+  min-width: 0;
+  padding: var(--space-6) var(--space-6) var(--space-7);
+  outline: none;
+}
+.ds-content {
+  max-width: 1040px;
+}
+
+/* ---------- page head ---------- */
+.ds-title {
+  overflow-wrap: anywhere;
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-title);
+  font-weight: var(--fw-light);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.ds-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+}
+.ds-page-head > div {
+  min-width: 0;
+}
+.ds-lead {
+  max-width: 72ch;
+  margin: 0 0 var(--space-5);
+  color: var(--ink-2);
+}
+.ds-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-1);
+  color: var(--action);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---------- step bar ---------- */
+.ds-steps-label {
+  margin: 0 0 var(--space-2);
+}
+.ds-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+.ds-step {
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.ds-step[aria-current="step"] {
+  border-color: transparent;
+  background: var(--here);
+  box-shadow: inset 0 0 0 2px var(--here-edge);
+  color: var(--ink);
+  font-weight: var(--fw-strong);
+}
+
+/* ---------- tiles ---------- */
+.ds-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.ds-tile {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+.ds-tile .big {
+  font-size: var(--fs-amount);
+  font-weight: var(--fw-light);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.ds-tile .big.warn {
+  color: var(--warn);
+}
+.ds-tile .label {
+  margin-top: var(--space-1);
+  font-weight: var(--fw-strong);
+}
+.ds-tile .sub {
+  font-size: var(--fs-meta);
+  color: var(--ink-3);
+}
+
+/* ---------- cards ---------- */
+.ds-stack {
+  display: grid;
+  gap: var(--space-5);
+}
+.ds-grid2 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.ds-card {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+.ds-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.ds-card h2,
+.ds-h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: var(--fw-strong);
+  line-height: 1.35;
+}
+.ds-card h2:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.ds-sentence {
+  max-width: 72ch;
+  margin: 0 0 var(--space-4);
+  font-size: 16px;
+}
+.ds-sentence strong {
+  font-weight: var(--fw-strong);
+}
+.ds-quote {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-control);
+  background: var(--tag-cool);
+  color: var(--ink-2);
+}
+.ds-quote p {
+  margin: 0;
+}
+
+/* ---------- amount ---------- */
+.ds-amount-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.ds-amount {
+  font-size: var(--fs-amount);
+  font-weight: var(--fw-light);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ds-amount .gr {
+  font-size: 0.6em;
+  vertical-align: 0.55em;
+  letter-spacing: 0;
+}
+.ds-amount .unit {
+  margin-left: 4px;
+  font-size: 15px;
+  color: var(--ink-2);
+  letter-spacing: 0;
+}
+
+/* ---------- status pill and tags ---------- */
+.ds-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--r-pill-status);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ds-pill[data-tone="warn"] {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+.ds-pill[data-tone="pos"] {
+  color: var(--pos);
+  background: var(--pos-soft);
+}
+.ds-pill[data-tone="err"] {
+  color: var(--err);
+  background: var(--err-soft);
+}
+.ds-pill[data-tone="neutral"] {
+  color: var(--ink-2);
+  background: var(--tag-cool);
+}
+.ds-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--tag-cool);
+  color: var(--ink);
+  font-size: 13px;
+}
+.ds-tag svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.ds-tag[data-category="build"] {
+  background: var(--cat-build);
+}
+.ds-tag[data-category="apply"] {
+  background: var(--cat-apply);
+}
+.ds-tag[data-category="lead"] {
+  background: var(--cat-lead);
+}
+
+/* ---------- job ad card (the bridge) ---------- */
+.ds-adcard {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+}
+.ds-adcard .role {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--fw-strong);
+  line-height: 1.3;
+}
+.ds-adcard p {
+  max-width: 72ch;
+}
+.ds-details summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--action);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ds-details[open] summary {
+  margin-bottom: var(--space-2);
+}
+.ds-prose {
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+/* ---------- buttons ---------- */
+.ds-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 20px;
+  border-radius: var(--r-pill);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ds-btn-primary {
+  border: 1px solid var(--action);
+  background: var(--action);
+  color: #fff;
+}
+.ds-btn-primary:hover {
+  border-color: var(--action-hover);
+  background: var(--action-hover);
+  color: #fff;
+}
+.ds-btn-secondary {
+  border: 1px solid var(--border-control);
+  background: var(--surface);
+  color: var(--ink);
+}
+.ds-btn-secondary:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.ds-btn:disabled,
+.ds-btn[aria-disabled="true"] {
+  border-color: var(--rule);
+  background: var(--canvas);
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}
+.ds-btn-sm {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.ds-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--action);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.ds-link:hover {
+  background: none;
+  color: var(--action-hover);
+}
+.ds-reason {
+  font-size: var(--fs-meta);
+  color: var(--ink-3);
+}
+
+/* ---------- ledger ---------- */
+.ds-ledger {
+  margin: 0;
+}
+.ds-ledger > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.ds-ledger > div:first-child {
+  border-top: 1px solid var(--rule);
+}
+.ds-ledger dt {
+  color: var(--ink-2);
+}
+.ds-ledger dt .ds-meta {
+  display: block;
+}
+.ds-ledger dd {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* Final total of a calculation: double rule, at most once per screen. */
+.ds-ledger > div.total {
+  border-top: 3px double var(--ink-3);
+  border-bottom: 0;
+  font-weight: var(--fw-strong);
+}
+.ds-ledger > div.total dt {
+  color: var(--ink);
+}
+
+/* ---------- list rows (job list, history) ---------- */
+.ds-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.ds-list > li:first-child {
+  border-top: 1px solid var(--rule);
+}
+.ds-list .ds-row-main {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+.ds-list .ds-row-title {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: var(--fw-strong);
+  text-decoration: none;
+}
+.ds-list a.ds-row-title:hover {
+  color: var(--action);
+  text-decoration: underline;
+}
+.ds-timeline > li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  padding: var(--space-3) 0;
+}
+.ds-timeline time {
+  font-size: var(--fs-meta);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ds-timeline .ds-meta {
+  grid-column: 1 / -1;
+}
+
+/* ---------- info message (butter) ---------- */
+.ds-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-card);
+  background: var(--info-soft);
+  font-size: 14px;
+}
+
+/* ---------- forms ---------- */
+.ds-form {
+  display: grid;
+  gap: var(--space-4);
+}
+.ds-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.ds .field,
+.ds-field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.ds .field > span:first-child,
+.ds-field > span:first-child {
+  font-weight: var(--fw-strong);
+  color: var(--ink);
+}
+.ds-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.ds-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-control);
+  background: var(--err-soft);
+  color: var(--err);
+  font-size: 14px;
+}
+
+/* Shell-level messages rendered by the shared Shell inside the DS frame. */
+.ds .prototype-error {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--r-card);
+  background: var(--err-soft);
+  color: var(--err);
+}
+.ds .prototype-notice {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--r-card);
+  background: var(--info-soft);
+  color: var(--ink);
+}
+
+/* Radio cards: selected = action-soft + indigo border. */
+.ds-choices {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ds-choices legend {
+  margin-bottom: var(--space-2);
+  font-size: 14px;
+  font-weight: var(--fw-strong);
+}
+.ds-choices label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 8px var(--space-3);
+  border: 1px solid var(--border-control);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  cursor: pointer;
+}
+.ds-choices label:hover {
+  background: var(--canvas);
+}
+.ds-choices label:has(input:checked) {
+  border-color: var(--action);
+  background: var(--action-soft);
+}
+.ds-choices input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--action);
+}
+
+/* ---------- dialog ---------- */
+.ds-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(28, 29, 38, 0.4);
+}
+.ds-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 51;
+  display: grid;
+  gap: var(--space-4);
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: var(--space-5);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  transform: translate(-50%, -50%);
+  outline: none;
+}
+.ds-dialog h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--fw-strong);
+  line-height: 1.3;
+}
+.ds-dialog .ds-actions {
+  margin-top: var(--space-2);
+}
+
+/* ---------- sticky action bar ---------- */
+.ds-sticky {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+  box-shadow: var(--shadow-sticky);
+}
+.ds-sticky-spacer {
+  height: 72px;
+}
+
+/* ---------- mobile ---------- */
+@media (max-width: 860px) {
+  .ds-grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .ds-shell {
+    display: block;
+  }
+  .ds-appbar {
+    padding: 0 var(--space-4);
+  }
+  .ds-appbar .ds-sep,
+  .ds-appbar .ds-prod,
+  .ds-appbar .ds-right {
+    display: none;
+  }
+  .ds-menu-btn {
+    display: inline-flex;
+    align-items: center;
+  }
+  .ds-side {
+    display: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .ds-side[data-open] {
+    display: block;
+  }
+  .ds-side-context {
+    display: block;
+    margin: 0 0 var(--space-3);
+    padding: 0 var(--space-3);
+  }
+  .ds-nav a {
+    min-height: 44px;
+  }
+  .ds-main {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+  }
+  .ds-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+  }
+  .ds-tile {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+  }
+  .ds-tile .big {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    font-size: 26px;
+    text-align: right;
+  }
+  .ds-tile .label {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .ds-tile .sub {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .ds-card {
+    padding: var(--space-4);
+  }
+  .ds-btn {
+    min-height: 44px;
+    white-space: normal;
+  }
+  .ds-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ds-actions .ds-btn {
+    width: 100%;
+  }
+  .ds-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ds-sticky {
+    padding: var(--space-3) var(--space-4);
+  }
+  .ds-sticky .ds-btn {
+    flex: 1 1 0;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+}
+
+/* A list that opens a card needs no rule above its first row. */
+.ds-card > .ds-list:first-child > li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}

@@ -1,7 +1,7 @@
+/** Match Score is a text-similarity fact, never a chance of being hired; neutral tag. */
 export function MatchScore({ score }: { score: number }) {
-  const band = score >= 80 ? "green" : score >= 60 ? "yellow" : score >= 40 ? "orange" : "red";
   return (
-    <span className="match-score" data-score-band={band}>
+    <span className="match-score" title="Ocena zgodności tekstów 0–100, nie szansa na zatrudnienie">
       Match Score: {score}%
     </span>
   );

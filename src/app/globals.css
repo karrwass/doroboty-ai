@@ -2,12 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "../../tokens.css";
-@import "./workspace.css";
-@import "./poster-people.css";
-@import "./marketplace.css";
-@import "./records.css";
-@import "./application.css";
-@import "./interactions.css";
+/* DoRoboty Design (docs/design-system/DOROBOTY-DESIGN.md). Poster People styles are retired. */
+@import "../design-system/tokens.css";
+@import "../design-system/bridge.css";
+@import "../design-system/base.css";
+@import "../design-system/controls.css";
+@import "../design-system/praca.css";
+@import "../design-system/komfort.css";
+@import "../design-system/records.css";
 
 @theme inline {
   --color-background: var(--background);
@@ -96,41 +98,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-variation-settings:
-      "STYL" 0,
-      "ital" 0;
-    text-wrap: pretty;
   }
   html {
     @apply font-sans;
     scroll-behavior: smooth;
   }
 
-  ::selection {
-    background: var(--gui-color-1-transparent);
-    color: var(--gui-text);
-  }
-
   svg {
     stroke-width: var(--icon-stroke-width);
   }
-
-  [data-slot="dialog-portal"],
-  [data-slot="alert-dialog-portal"] {
-    font-family: var(--gui-font-ui);
-    font-variation-settings:
-      "STYL" 0,
-      "ital" 0;
-  }
-}
-
-@font-face {
-  font-family: "Geist Serif";
-  src: url("../../docs/design-system/agent-kit/assets/fonts/GeistSerif-Regular.woff2")
-    format("woff2");
-  font-weight: 400;
-  font-display: swap;
-}
-:root {
-  --font-timeless: "Timeless Grotesk", sans-serif;
 }

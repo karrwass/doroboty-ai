@@ -1,0 +1,70 @@
+/*
+ * DoRoboty Design: document base for the whole application.
+ * Registers: .ds (Praca, cool canvas) and .ds.reg-komfort (Komfort, warm canvas).
+ */
+html,
+body {
+  overflow-x: clip;
+}
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  letter-spacing: normal;
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+body:has(.reg-komfort) {
+  background: var(--canvas-warm);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font);
+  font-weight: var(--fw-strong);
+  letter-spacing: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+::selection {
+  background: var(--action-soft);
+  color: var(--ink);
+}
+:where(a[href], button, [role="button"], summary, label:has(input)):not(
+  :disabled,
+  [aria-disabled="true"],
+  [data-disabled]
+) {
+  cursor: pointer;
+}
+:where(button, [role="button"]):is(:disabled, [aria-disabled="true"], [data-disabled]) {
+  cursor: not-allowed;
+}
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--r-pill);
+  background: var(--action);
+  color: #fff;
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -16,10 +16,13 @@ import {
 } from "./workspace";
 import { EmployerJobs, EmployerJobEditor, CompanyEditor } from "./employer";
 import { SettingsPage, PrivacyPage } from "./settings";
+import { DraftPublicationPage } from "./purchase";
+import { ApprovalPage } from "./approval";
 import { CasePage } from "./case";
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="zgoda/:token" element={<ApprovalPage />} />
       <Route element={<Shell />}>
         <Route index element={<HomePage />} />
         <Route path="oferty" element={<JobsPage />} />
@@ -106,6 +109,14 @@ function AppRoutes() {
           element={
             <RequireRole role="employer">
               <EmployerJobEditor />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="app/oferty/:id/publikacja"
+          element={
+            <RequireRole role="employer">
+              <DraftPublicationPage />
             </RequireRole>
           }
         />

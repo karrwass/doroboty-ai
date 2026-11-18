@@ -139,3 +139,75 @@ describe("coherent browser scenario", () => {
     ).toThrow();
   });
 });
+describe("next draft → approval request → payment", () => {
+  const draftId = "20000000-0000-4000-8000-000000000102";
+  it("records the blocker, the approver decision and the paid publication", () => {
+    let s = as(initialState(time), "employer-brightlabs");
+    s = transition(s, {
+      type: "draft_reason",
+      jobId: draftId,
+      blocker: "budget",
+      decisionDate: "2026-11-20",
+    });
+    s = transition(
+      s,
+      { type: "request_approval", jobId: draftId, approver: "Ewa", message: "Zgoda?" },
+      time,
+      "request-token",
+    );
+    // The approver uses the link without a persona.
+    s = transition(s, { type: "select_person", id: null });
+    s = transition(s, { type: "request_opened", token: "request-token" });
+    s = transition(s, { type: "request_decision", token: "request-token", decision: "approved" });
+    expect(() =>
+      transition(s, { type: "request_decision", token: "request-token", decision: "declined" }),
+    ).toThrow();
+    s = as(s, "employer-brightlabs");
+    s = transition(s, { type: "pay_and_publish", jobId: draftId }, time);
+    const flow = s.purchaseFlows.find((x) => x.jobId === draftId)!;
+    expect(flow.request?.status).toBe("approved");
+    expect(flow.paidAt).toBe(time);
+    expect(flow.events.map((x) => x.type)).toEqual([
+      "draft_saved",
+      "reason_given",
+      "request_created",
+      "request_opened",
+      "request_approved",
+      "paid",
+    ]);
+    expect(s.jobs.find((x) => x.id === draftId)?.publicationStatus).toBe("published");
+    expect(() => transition(s, { type: "pay_and_publish", jobId: draftId })).toThrow();
+  });
+  it("keeps the decline reason and blocks other companies", () => {
+    let s = as(initialState(time), "employer-brightlabs");
+    s = transition(
+      s,
+      { type: "request_approval", jobId: draftId, approver: "", message: "" },
+      time,
+      "token-2",
+    );
+    expect(() =>
+      transition(s, { type: "request_decision", token: "token-2", decision: "declined" }),
+    ).toThrow();
+    s = transition(s, {
+      type: "request_decision",
+      token: "token-2",
+      decision: "declined",
+      reason: "no_role",
+      note: "Wracamy w styczniu",
+    });
+    expect(s.purchaseFlows.find((x) => x.jobId === draftId)?.request).toMatchObject({
+      status: "declined",
+      declineReason: "no_role",
+    });
+    expect(() =>
+      transition(as(s, "employer-northstar"), { type: "pay_and_publish", jobId: draftId }),
+    ).toThrow();
+  });
+  it("accepts saves made before the purchase flow existed", () => {
+    const old = JSON.parse(JSON.stringify(initialState(time)));
+    delete old.purchaseFlows;
+    delete old.publicationResults;
+    expect(stateSchema.parse(old).purchaseFlows).toEqual([]);
+  });
+});

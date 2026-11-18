@@ -34,3 +34,7 @@ Run npm run build. Serve dist/ through any static HTTP host. No provider account
 ## Verification
 
 Run ./scripts/verify or npm run check. Browser tests require provisioned Playwright Chromium; a missing test browser does not prevent npm run dev. Do not let an agent install system dependencies automatically.
+
+## Getting help
+
+If the prototype does not start, shows a blank page or loses your scenario during the course, ask the course instructor. Before asking, export your data in settings (if the app still opens) and note the command or screen where the problem appeared. To get going again, the instructor can help you import the export, reset the scenario or start from a fresh checkout with npm ci.

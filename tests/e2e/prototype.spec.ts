@@ -97,7 +97,7 @@ test("published job → saved offer/draft → submitted application → employer
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await choose(page, "Karolina Wiśniewska");
-  await page.getByRole("link", { name: "Dodaj ofertę", exact: true }).click();
+  await page.getByRole("link", { name: "Dodaj ogłoszenie", exact: true }).click();
   await page.getByLabel("Nazwa stanowiska").fill("Product Designer do automatyzacji");
   await page
     .getByLabel("Brief — kogo szukasz i do jakiego zadania?")
@@ -105,7 +105,10 @@ test("published job → saved offer/draft → submitted application → employer
   await page.getByRole("button", { name: "Przygotuj opis z AI" }).click();
   await page.getByRole("button", { name: "Użyj propozycji" }).click();
   await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Opublikuj ofertę" }).click();
+  await page.getByRole("button", { name: "Opublikuj i zapłać" }).click();
+  await page.getByRole("button", { name: /^Zapłać .* i opublikuj$/ }).click();
+  await expect(page.getByRole("heading", { name: "Ogłoszenie jest opublikowane" })).toBeVisible();
+  await page.goto("/#/app/oferty");
   await expect(
     page.getByRole("link", { name: "Product Designer do automatyzacji", exact: true }),
   ).toBeVisible();
@@ -210,13 +213,13 @@ test("invalid import preserves state, valid import replaces state, reset asks fo
     buffer: Buffer.from(JSON.stringify(imported)),
   });
   await page.getByRole("button", { name: "Importuj", exact: true }).click();
-  await expect(page.getByText("Zaimportowana Anna", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Moje konto: Zaimportowana Anna" })).toBeVisible();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Eksportuj dane" }).click();
   expect((await download).suggestedFilename()).toBe("doroboty-scenariusz.json");
   await page.getByRole("button", { name: "Resetuj scenariusz", exact: true }).click();
   await page.getByRole("button", { name: "Anuluj", exact: true }).click();
-  await expect(page.getByText("Zaimportowana Anna", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Moje konto: Zaimportowana Anna" })).toBeVisible();
   await page.getByRole("button", { name: "Resetuj scenariusz", exact: true }).click();
   await page.getByRole("button", { name: "Resetuj", exact: true }).click();
   expect(
@@ -289,7 +292,7 @@ test("mobile navigation, light-only appearance and keyboard person selection", a
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Motyw" })).toHaveCount(0);
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(244, 244, 240)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(248, 245, 239)");
   await page.screenshot({ path: "artifacts/settings-mobile-light.png", fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -458,45 +461,43 @@ test("legacy dark preference keeps scenario data and renders the light interface
     "Zachowaj mój profil",
   );
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(244, 244, 240)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(248, 245, 239)");
   await page.getByRole("button", { name: "Zapisz profil", exact: true }).click();
   expect(
     await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).theme, STORAGE_KEY),
   ).toBeUndefined();
 });
 
-test("Poster People offer keeps desktop conditions/actions and places them before mobile reading", async ({
+test("DoRoboty Design offer keeps facts and actions before the description in one column", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await choose(page, "Anna Kowalska");
   await page.goto("/#/oferty/ai-product-manager");
-  const article = page.locator(".pp-offer-page");
-  const hero = article.locator("header");
-  await expect(hero).toContainText(
+  const article = page.getByRole("article").filter({ has: page.locator("#offer-title") });
+  await expect(article).toContainText(
     "Poprowadź produkt od problemu operacyjnego do mierzalnego wdrożenia AI.",
   );
-  await expect(hero.getByText("Senior", { exact: true })).toBeVisible();
+  await expect(article.getByText("Senior", { exact: true }).first()).toBeVisible();
   const facts = article.getByRole("complementary");
   await expect(facts.getByRole("heading", { name: "Konkrety", exact: true })).toHaveCount(1);
   await expect(facts).toContainText("Wynagrodzenie");
   const description = article.locator("[data-job-description]");
-  const heroBox = await hero.boundingBox();
-  const descriptionBox = await description.boundingBox();
-  const factsBox = await facts.boundingBox();
-  expect(heroBox!.width).toBeLessThanOrEqual(1024);
-  expect(factsBox!.x).toBeGreaterThan(descriptionBox!.x + descriptionBox!.width);
   const apply = article.getByRole("link", { name: "Aplikuj", exact: true });
-  const applyBox = await apply.boundingBox();
-  expect(applyBox!.x).toBeGreaterThan(descriptionBox!.x + descriptionBox!.width);
-  await page.screenshot({ path: "artifacts/original-job-layout-desktop.png", fullPage: true });
+  const articleBox = await article.boundingBox();
+  // Komfort: one column of at most 720px.
+  expect(articleBox!.width).toBeLessThanOrEqual(720);
+  expect((await apply.boundingBox())!.y).toBeLessThan((await description.boundingBox())!.y);
+  await expect(page.locator(".ds-band")).toHaveCount(1);
+  await expect(page.locator("[aria-current=step]")).toHaveText("Oferta");
+  await page.screenshot({ path: "artifacts/offer-desktop.png", fullPage: true });
   const nav = page.getByRole("navigation", { name: "Główna nawigacja" });
   await expect(nav.getByRole("link", { name: "Aplikacje", exact: true })).toBeVisible();
   await expect(nav.getByRole("link", { name: "Profil", exact: true })).toBeVisible();
   await page.setViewportSize({ width: 375, height: 812 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  expect((await facts.boundingBox())!.y).toBeLessThan((await description.boundingBox())!.y);
-  await page.screenshot({ path: "artifacts/original-job-layout-mobile.png", fullPage: true });
+  expect((await apply.boundingBox())!.y).toBeLessThan((await description.boundingBox())!.y);
+  await page.screenshot({ path: "artifacts/offer-mobile.png", fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await nav.getByRole("link", { name: "Dla firm", exact: true }).click();
   await expect(
@@ -520,15 +521,21 @@ test("restored company and public navigation keep their structure across screen 
   await page.screenshot({ path: "artifacts/original-company-layout-desktop.png", fullPage: true });
   for (const width of [320, 640, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 });
-    const nav = await page.getByRole("navigation", { name: "Główna nawigacja" }).boundingBox();
-    expect(nav!.x + nav!.width).toBeLessThanOrEqual(width);
+    // Wide: navigation in the bar. Narrow (<=960px): the same links behind the Menu button.
+    const nav = page.getByRole("navigation", { name: "Główna nawigacja" });
+    if (width > 960) {
+      const box = await nav.boundingBox();
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    } else {
+      await expect(page.getByRole("button", { name: "Otwórz menu" })).toBeVisible();
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
   }
   await page.goto("/#/oferty");
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Dobra robota.");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Oferty pracy");
   await expect(page.getByRole("textbox", { name: "Szukaj ofert", exact: true })).toBeVisible();
   await expect(page.locator("[data-job-page-summary]")).toHaveText("Oferty 1–6 z 6");
   await page.screenshot({ path: "artifacts/original-list-layout-desktop.png", fullPage: true });
@@ -576,34 +583,26 @@ test("desktop reset synchronizes search, category and facets with the URL", asyn
   );
 });
 
-test("canonical marketplace typography and search geometry match Poster People breakpoints", async ({
+test("DoRoboty Design typography: one family, Komfort titles and tabular amounts", async ({
   page,
 }) => {
   for (const [width, title, card] of [
-    [1280, "72px", "28px"],
-    [1100, "58px", "26px"],
-    [850, "52px", "28px"],
-    [390, "43px", "26px"],
+    [1280, "32px", "18px"],
+    [390, "27px", "18px"],
   ] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/#/oferty");
-    await expect(page.locator(".pp-intro-copy h1")).toHaveCSS("font-size", title);
-    await expect(page.locator(".pp-job-title").first()).toHaveCSS("font-size", card);
+    const h1 = page.getByRole("heading", { level: 1 });
+    await expect(h1).toHaveCSS("font-size", title);
+    await expect(h1).toHaveCSS("font-weight", "700");
+    expect(await h1.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^"?Inter/);
+    await expect(page.locator(".ds-jobcard-title").first()).toHaveCSS("font-size", card);
     await expect(page.getByRole("textbox", { name: "Szukaj ofert", exact: true })).toBeVisible();
-    if (width === 1280) {
-      expect((await page.locator(".pp-search-form").boundingBox())!.width).toBe(1200);
-      await expect(page.locator(".pp-salary-tag").first()).toHaveCSS("font-size", "15px");
-    }
-  }
-  for (const [width, title, salary] of [
-    [1280, "64px", "24px"],
-    [850, "46px", "20px"],
-    [390, "47px", "25px"],
-  ] as const) {
-    await page.setViewportSize({ width, height: 900 });
     await page.goto("/#/oferty/ai-product-manager");
-    await expect(page.locator(".pp-offer-hero h1")).toHaveCSS("font-size", title);
-    await expect(page.locator(".pp-offer-pay .pp-salary-tag")).toHaveCSS("font-size", salary);
+    await expect(page.locator("#offer-title")).toHaveCSS("font-size", title);
+    const amount = page.locator(".ds-money .ds-amount");
+    await expect(amount).toHaveCSS("font-size", "30px");
+    await expect(amount).toHaveCSS("font-variant-numeric", "tabular-nums");
   }
 });
 
@@ -621,9 +620,12 @@ test("offer section links survive copied URLs and restore section focus through 
   await expect(page).toHaveURL(/#\/oferty\/ai-product-manager#employer$/);
   const copied = await context.newPage();
   await copied.goto(destination);
-  await expect(copied.locator(".pp-offer-hero h1")).toHaveText("AI Product Manager");
+  await expect(copied.locator("#offer-title")).toHaveText("AI Product Manager");
   await expect(copied.locator("#employer")).toBeFocused();
-  expect((await copied.locator("#employer").boundingBox())!.y).toBeLessThan(50);
+  // The section starts just below the sticky Komfort bar (64px + 3px stripe), not under it.
+  const top = (await copied.locator("#employer").boundingBox())!.y;
+  expect(top).toBeGreaterThanOrEqual(60);
+  expect(top).toBeLessThan(120);
   await copied.close();
   await page.getByRole("link", { name: "O roli", exact: true }).click();
   await expect(page.locator("#role")).toBeFocused();
@@ -648,39 +650,38 @@ for (const width of [1280, 390])
     await expect(page.getByRole("textbox", { name: "Szukaj ofert", exact: true })).toHaveValue("");
   });
 
-test("homepage surfaces and marketplace action type roles match the shared reference", async ({
+test("DoRoboty Design surfaces and button roles: cards, indigo primary, pill shape", async ({
   page,
 }) => {
   await page.goto("/#/");
-  const cards = page.locator("main article.prototype-panel");
+  const cards = page.locator("main .ds-grid3 > article.ds-card");
   await expect(cards).toHaveCount(3);
   for (const card of await cards.all()) {
-    await expect(card).toHaveCSS("border-radius", "24px");
-    await expect(card).toHaveCSS("box-shadow", /rgb\(24, 24, 24\).*1px inset/);
+    // Komfort card: 16px radius, decorative 1px rule border, white surface.
+    await expect(card).toHaveCSS("border-radius", "16px");
+    await expect(card).toHaveCSS("border-top-color", "rgb(230, 230, 236)");
+    await expect(card).toHaveCSS("background-color", "rgb(255, 255, 255)");
   }
-  for (const [width, searchSize, offerSize, payLine] of [
-    [1280, "14px", "14px", "34.8px"],
-    [1100, "14px", "13px", "31.9px"],
-    [850, "12px", "12px", "29px"],
-    [700, "12px", "14px", "36.25px"],
-    [600, "12px", "14px", "33.75px"],
-    [390, "12px", "14px", "33.75px"],
-  ] as const) {
+  for (const width of [1280, 850, 390] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/#/oferty");
     const search = page.getByRole("button", { name: "Szukaj", exact: true });
-    await expect(search).toHaveCSS("font-size", searchSize);
-    await expect(search).toHaveCSS("font-weight", "600");
-    await expect(search).toHaveCSS("letter-spacing", "normal");
-    await expect(search).toHaveCSS("line-height", `${parseInt(searchSize) * 1.5}px`);
-    await expect(search).toHaveCSS("border-top-width", "1px");
-    await expect(search).toHaveCSS("box-shadow", "none");
+    await expect(search).toHaveCSS("background-color", "rgb(52, 70, 184)");
+    await expect(search).toHaveCSS("color", "rgb(255, 255, 255)");
+    await expect(search).toHaveCSS("border-top-left-radius", "999px");
+    await expect(search).toHaveCSS("font-weight", "500");
+    const minHeight = parseInt(await search.evaluate((el) => getComputedStyle(el).minHeight));
+    expect(minHeight).toBeGreaterThanOrEqual(width <= 720 ? 44 : 40);
     await page.goto("/#/oferty/ai-product-manager");
-    const action = page.locator(".pp-offer-actions a").first();
-    await expect(action).toHaveCSS("font-size", offerSize);
-    await expect(action).toHaveCSS("font-weight", "600");
-    await expect(action).toHaveCSS("line-height", `${parseInt(offerSize) * 1.5}px`);
-    await expect(page.locator(".pp-offer-pay .pp-salary-tag")).toHaveCSS("line-height", payLine);
+    const action = page.locator("article .ds-actions a").first();
+    await expect(action).toHaveCSS("background-color", "rgb(52, 70, 184)");
+    await expect(action).toHaveCSS("border-top-left-radius", "999px");
+    // Exactly one yellow "current step" element per view.
+    await expect(page.locator("[aria-current=step]")).toHaveCount(1);
+    await expect(page.locator("[aria-current=step]")).toHaveCSS(
+      "background-color",
+      "rgb(255, 226, 122)",
+    );
   }
 });
 
@@ -800,11 +801,17 @@ for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await choose(page, "Anna Kowalska");
     await page.goto("/#/oferty/ai-product-manager");
-    const gap = await page.locator(".pp-offer-actions").evaluate((element) => {
-      const [apply, save] = element.querySelectorAll("a, button");
-      return save.getBoundingClientRect().top - apply.getBoundingClientRect().bottom;
-    });
-    expect(gap).toBeGreaterThanOrEqual(10);
+    const gap = await page
+      .locator("article .ds-actions")
+      .first()
+      .evaluate((element) => {
+        const [apply, save] = [...element.querySelectorAll("a, button")].map((x) =>
+          x.getBoundingClientRect(),
+        );
+        // Side by side on desktop, stacked full width on mobile; never touching.
+        return Math.max(save.left - apply.right, save.top - apply.bottom);
+      });
+    expect(gap).toBeGreaterThanOrEqual(8);
     await page.getByRole("link", { name: "Aplikuj", exact: true }).click();
     const offer = page.getByRole("complementary", { name: "AI Product Manager", exact: true });
     await expect(offer).toContainText("BrightLabs");
@@ -833,7 +840,7 @@ for (const width of [1280, 390]) {
     await page.reload();
     await expect(answer).toHaveValue(text);
     await expect(form.getByRole("checkbox")).not.toBeChecked();
-    const accessibility = await new AxeBuilder({ page }).include(".application-page").analyze();
+    const accessibility = await new AxeBuilder({ page }).include("main").analyze();
     expect(accessibility.violations).toEqual([]);
   });
 }

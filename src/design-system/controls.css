@@ -1,0 +1,154 @@
+/*
+ * DoRoboty Design form controls, shared by both registers.
+ * Controls need a 3:1 border, so they use --border-control, never --rule.
+ */
+.ds-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-control);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+}
+.ds-input::placeholder {
+  color: var(--ink-3);
+}
+.ds-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.ds-input:disabled {
+  background: var(--canvas);
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}
+.ds-input[readonly] {
+  background: var(--canvas);
+  color: var(--ink-2);
+}
+.ds-input[aria-invalid="true"] {
+  border-color: var(--err);
+  background: var(--err-soft);
+}
+.ds-textarea {
+  min-height: 112px;
+  field-sizing: content;
+  resize: vertical;
+}
+.ds-checkbox {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  background: var(--surface);
+  color: #fff;
+}
+.ds-checkbox[data-checked] {
+  border-color: var(--action);
+  background: var(--action);
+}
+.ds-checkbox[aria-invalid="true"] {
+  border-color: var(--err);
+}
+.ds-checkbox:disabled,
+.ds-checkbox[data-disabled] {
+  background: var(--canvas);
+  border-color: var(--rule);
+}
+.ds-checkbox-indicator {
+  display: flex;
+}
+[data-slot="select-trigger"] {
+  min-height: 40px;
+  border: 1px solid var(--border-control) !important;
+  border-radius: var(--r-control) !important;
+  background: var(--surface) !important;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  letter-spacing: normal;
+  box-shadow: none !important;
+}
+[data-slot="select-content"] {
+  border: 1px solid var(--rule) !important;
+  border-radius: var(--r-control) !important;
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-float) !important;
+  font-family: var(--font);
+}
+[data-slot="select-item"] {
+  min-height: 40px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 15px;
+  letter-spacing: normal;
+}
+[data-slot="select-item"][data-highlighted] {
+  background: var(--canvas);
+}
+[data-slot="select-item"][data-selected] {
+  background: var(--action-soft);
+  font-weight: var(--fw-strong);
+}
+
+/* Extra button variants for the shared primitive. */
+.ds-btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+}
+.ds-btn-ghost:hover {
+  background: var(--canvas);
+  color: var(--ink);
+}
+.ds-btn-ghost[aria-pressed="true"] {
+  background: var(--action-soft);
+}
+.ds-btn.ds-btn-danger {
+  color: var(--err);
+}
+.ds-btn.ds-btn-danger:hover {
+  background: var(--err-soft);
+  color: var(--err);
+}
+.ds-btn-lg {
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.ds-btn-icon {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+.ds-btn-icon-sm {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+.ds-btn svg {
+  flex: none;
+}
+@media (max-width: 720px) {
+  .ds-input {
+    min-height: 44px;
+  }
+  .ds-btn-icon,
+  .ds-btn-icon-sm {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

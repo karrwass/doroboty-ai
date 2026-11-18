@@ -24,18 +24,20 @@ FEATURES.md describes current behavior, not a roadmap. Update it in the same cha
 
 ## Required design system
 
-For every new or changed screen, use [Poster People project instructions](docs/design-system/README.md). Read that guide, [design.md](docs/design-system/agent-kit/design.md), [component API](docs/design-system/agent-kit/components/API.md), and the relevant [human reference](docs/design-system/agent-kit/reference/components.md) before choosing styles or layout. Read the [host implementation rules](docs/design-system/IMPLEMENTATION.md) and [application acceptance checklist](docs/design-system/VERIFICATION.md) as required companions. [GUI.md](GUI.md) is the short entry point. This is the required visual direction; the previous theme guidance has been removed.
+**DoRoboty Design** is the application's design system (product owner's decision 2026-11-17; whole application converted 2026-11-18).
 
-Use the complete local kit in docs/design-system/agent-kit as the source for typography, colors, radii, anatomy, responsive composition and states. Adapt it to this project's React/TypeScript/Vite and existing Base UI primitives. Keep the `render` API, hash routes, domain data and persistent local flows. Do not import the example controllers, fixtures, body reset or string renderer into product React code. Current application styles are implementation to adapt within the active task scope, not another approved visual target. Installing documentation does not itself convert the running UI.
+Read [docs/design-system/DOROBOTY-DESIGN.md](docs/design-system/DOROBOTY-DESIGN.md) first, then the copied skill [doroboty-design/SKILL.md](docs/design-system/doroboty-design/SKILL.md) and its [references](docs/design-system/doroboty-design/references/) (tokens with measured contrast, components, Polish copy rules). Pick the register before you draw: **Praca** for employer, budget holder and operator screens, **Komfort** for candidate and public pages.
 
-Run `npm run design-system:dev` for the reference catalog/listing/offer (port 8952) and `npm run design-system:check` for integrity and example checks. No extra package installation is needed for the kit. Use local bundled Geist Serif/illustration assets; no remote runtime dependencies. Keep the kit immutable and implement product changes in src/ and the host token layer. Follow the guide's desktop/mobile, long-content, keyboard/state and integration checks; the reference's verification report does not verify a new screen.
+Build from `src/design-system/` (tokens, bridge, base, controls, `praca.css`, `komfort.css`, `records.css`, `components.tsx`) and the shared primitives in `src/components/ui/`, which already render DoRoboty Design. Keep `src/design-system/tokens.css` byte-identical to the skill. Preserve hash routing, Zod, persona data, localStorage and the application/employer workflows. Label invented content PRZYKŁAD / DEMO, keep one primary button and one yellow current step per view, and render new screens at 1440px and 390px before claiming completion.
+
+Poster People (docs/design-system/agent-kit and its guides) is retired and kept only as a historical reference; `npm run design-system:check` still verifies that archived kit. Do not build new UI from it.
 
 ## Standards
 
 - Code, comments and authored engineering documentation are English; end-user UI and canonical AIPH source wording are Polish.
 - Use npm, Node.js 24 and package-lock.json. No second package manager.
 - Features belong in src/features; src/components/ui contains shared Base UI primitives.
-- For UI changes follow GUI.md and docs/design-system/README.md; use the accepted Poster People design system with the existing Base UI components and render composition API. Do not restore the removed theme guides or require global design skills.
+- For UI changes follow docs/design-system/DOROBOTY-DESIGN.md and reuse src/design-system/ with the existing Base UI primitives and render composition API. Do not restore Poster People styles or require global design skills.
 - Use React Router hash routes.
 - Never log private free text or introduce secrets into the frontend.
 

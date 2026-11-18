@@ -1,14 +1,7 @@
 "use client";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
+
+/** Confirmation that names what is lost (DoRoboty Design: destructive = secondary, raspberry text). */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -29,29 +22,39 @@ export function ConfirmDialog({
   label?: string;
 }) {
   return (
-    <AlertDialog
+    <AlertDialog.Root
       open={open}
       onOpenChange={(value) => {
         if (!pending) onOpenChange(value);
       }}
     >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        {error && (
-          <p role="alert" className="error-message">
-            {error}
-          </p>
-        )}
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Anuluj</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" disabled={pending} onClick={onConfirm}>
-            {pending ? "Zapisywanie…" : label}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className="ds-backdrop" />
+        <AlertDialog.Popup className="ds ds-dialog">
+          <AlertDialog.Title render={<h2 />}>{title}</AlertDialog.Title>
+          <AlertDialog.Description render={<p className="ds-sentence" style={{ margin: 0 }} />}>
+            {description}
+          </AlertDialog.Description>
+          {error && (
+            <p role="alert" className="ds-error">
+              {error}
+            </p>
+          )}
+          <div className="ds-actions">
+            <button
+              type="button"
+              className="ds-btn ds-btn-secondary ds-btn-danger"
+              disabled={pending}
+              onClick={onConfirm}
+            >
+              {pending ? "Zapisywanie…" : label}
+            </button>
+            <AlertDialog.Close className="ds-btn ds-btn-secondary" disabled={pending}>
+              Anuluj
+            </AlertDialog.Close>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   );
 }

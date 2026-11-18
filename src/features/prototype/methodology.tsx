@@ -1,3 +1,7 @@
+/** Selection criteria page, register "Komfort". */
+import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { Page } from "./shell";
+
 const criteria = [
   ["AI zmienia pracę", "Technologia wpływa na odpowiedzialność, decyzje lub rezultat stanowiska."],
   [
@@ -16,33 +20,41 @@ const criteria = [
 
 export default function MethodologyPage() {
   return (
-    <article className="mx-auto max-w-5xl px-5 py-14 lg:px-8 lg:py-20">
-      <p className="text-xs font-medium tracking-[var(--gui-tracking-xl)] text-muted-foreground">
-        Nasze kryteria
-      </p>
-      <h1 className="mt-3 text-4xl font-semibold tracking-[var(--gui-tracking-s)] sm:text-5xl">
-        Nie każda praca z chatbotem jest pracą z AI.
-      </h1>
-      <p className="mt-5 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+    <Page>
+      <p className="ds-eyebrow">Nasze kryteria</p>
+      <h1 className="ds-title">Nie każda praca z chatbotem jest pracą z AI.</h1>
+      <p className="ds-lead">
         DoRoboty.ai pokazuje role, w których AI jest częścią realnej odpowiedzialności i mierzalnego
         wyniku.
       </p>
-      <div className="mt-12 grid gap-5 sm:grid-cols-2">
-        {criteria.map(([title, body], index) => (
-          <section key={title} className="rounded-xl bg-card p-6">
-            <span className="text-xs font-medium text-muted-foreground">0{index + 1}</span>
-            <h2 className="mt-3 text-xl font-semibold">{title}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
-          </section>
-        ))}
-      </div>
-      <section className="mt-12 rounded-xl bg-muted/40 p-7">
-        <h2 className="text-2xl font-semibold">Weryfikacja nie jest rekomendacją</h2>
-        <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-          Sprawdzamy źródło i kompletność informacji. Kandydat nadal powinien sam ocenić firmę,
-          warunki i dopasowanie roli.
+      <section className="ds-card" aria-labelledby="criteria-title">
+        <h2 id="criteria-title" className="ds-h2c">
+          <span className="ds-icon-tile" data-tone="sage">
+            <CheckCircle2 aria-hidden="true" />
+          </span>
+          Cztery kryteria oferty
+        </h2>
+        <dl className="ds-rows">
+          {criteria.map(([title, body]) => (
+            <div key={title} style={{ flexDirection: "column", gap: 2 }}>
+              <dt style={{ color: "var(--ink)", fontWeight: 600 }}>{title}</dt>
+              <dd style={{ textAlign: "left", fontWeight: 400, color: "var(--ink-2)" }}>{body}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section className="ds-card ds-section" aria-labelledby="verify-title">
+        <h2 id="verify-title" className="ds-h2c">
+          <span className="ds-icon-tile">
+            <ShieldCheck aria-hidden="true" />
+          </span>
+          Weryfikacja nie jest rekomendacją
+        </h2>
+        <p style={{ margin: 0 }}>
+          Sprawdzamy źródło i kompletność informacji. Firmę, warunki i dopasowanie roli nadal
+          oceniasz samodzielnie.
         </p>
       </section>
-    </article>
+    </Page>
   );
 }

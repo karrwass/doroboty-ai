@@ -1,21 +1,9 @@
-# GUI — DoRoboty.ai Poster People
+# GUI — DoRoboty.ai
 
-The required visual direction for new and changed screens is the accepted **Poster People** design system. The project instructions are [docs/design-system/README.md](docs/design-system/README.md). Read them before UI work; they define how the standalone reference is adapted to this React/TypeScript/Vite application. The previous theme reference tree and skill requirements have been removed.
+The application uses **DoRoboty Design** (product owner's decision 2026-11-17; whole application converted 2026-11-18). Start with [docs/design-system/DOROBOTY-DESIGN.md](docs/design-system/DOROBOTY-DESIGN.md).
 
-## Read and preview
+Read [docs/design-system/DOROBOTY-DESIGN.md](docs/design-system/DOROBOTY-DESIGN.md) first, then the copied skill [doroboty-design/SKILL.md](docs/design-system/doroboty-design/SKILL.md) and its [references](docs/design-system/doroboty-design/references/) (tokens with measured contrast, components, Polish copy rules). Pick the register before you draw: **Praca** for employer, budget holder and operator screens, **Komfort** for candidate and public pages.
 
-1. [Project integration guide](docs/design-system/README.md): authority, React/Base UI mapping, routes/state, assets and completion criteria.
-2. [Host implementation rules](docs/design-system/IMPLEMENTATION.md), [React component catalog](docs/design-system/HOST-COMPONENTS.md), [record/CV APIs](docs/design-system/RECORDS.md), [acceptance checklist](docs/design-system/VERIFICATION.md) and [status/open findings](docs/design-system/STATUS.md): reusable owners, actual contracts, URL/focus rules, breakpoint values and regression scenarios.
-3. [Agent entry point](docs/design-system/agent-kit/design.md): visual hierarchy, composition, exact standalone imports and extension boundaries.
-4. [Component API](docs/design-system/agent-kit/components/API.md) plus relevant [human reference](docs/design-system/agent-kit/reference/components.md): anatomy, variants, states and evidence.
-5. `npm run design-system:dev`: local catalog, full listing and offer on port 8952. `npm run design-system:check` checks the immutable kit. No global skill or extra installation is required.
+Build from `src/design-system/` (tokens, bridge, base, controls, `praca.css`, `komfort.css`, `records.css`, `components.tsx`) and the shared primitives in `src/components/ui/`, which already render DoRoboty Design. Keep `src/design-system/tokens.css` byte-identical to the skill. Preserve hash routing, Zod, persona data, localStorage and the application/employer workflows. Label invented content PRZYKŁAD / DEMO, keep one primary button and one yellow current step per view, and render new screens at 1440px and 390px before claiming completion.
 
-## Implement in this app
-
-- Preserve the requested scope, React/TypeScript/Vite, hash routes, Base UI's `render` composition, Zod/local data operations and current application workflows.
-- Use local Geist Serif Regular for headings, paper/white/ink/pink roles, source contours and radii, complete title wrapping and responsive listing/offer composition.
-- Adapt host tokens and existing primitives together. Do not paste the kit's global reset or vanilla controllers into React, substitute example data for product state, or create a parallel button/card library.
-- Keep docs/design-system/agent-kit unchanged as the reference; implement product UI in src/ and the host theme layer. Existing token names do not establish an alternative visual target.
-- Compare desktop/mobile evidence; test long content, missing salary/marks, keyboard focus, selection, dialogs and recovery. Run ./scripts/verify and report actual checks. The original kit report does not verify a new React screen.
-
-The running application has a host adaptation; current code still requires comparison with the source on each UI task. Follow the implementation map rather than creating parallel controls. Keep Search outside mobile filters, preserve copied section URLs under HashRouter, manage focus after chip removal, reuse outlined surfaces and compare full action type roles plus one contour. Record actual evidence and partial findings; preserve old audit artifacts in separate task-specific directories.
+Poster People (docs/design-system/agent-kit and its guides) is retired and kept only as a historical reference; `npm run design-system:check` still verifies that archived kit. Do not build new UI from it.

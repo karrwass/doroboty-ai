@@ -5,6 +5,10 @@ import { RecordSheet } from "@/components/record-sheet";
 import { CvAttachment } from "./cv-attachment";
 import { MatchScore } from "./match-score";
 import { stageLabels, type Application, type Stage } from "./model";
+import { StepBar } from "@/design-system/components";
+import { candidateSteps } from "./marketplace";
+import { stageTone } from "./workspace";
+import { Page } from "./shell";
 
 type RecordEvent = { stage: Stage; at: string; note?: string };
 const dateFormat = new Intl.DateTimeFormat("pl-PL", {
@@ -37,22 +41,20 @@ export function ApplicationRecord({
   const title = candidate ? application.jobTitle : application.candidateName;
   const context = candidate ? application.candidateName : application.jobTitle;
   const submitted = history[0];
-  return (
+  const tone = stageTone(application.stage);
+  const page = (
     <article className="recruiting-record">
-      <header className="recruiting-header">
-        <nav aria-label="Ścieżka nawigacji" className="record-breadcrumb">
-          <BackLink to={candidate ? "/app/aplikacje" : "/app/kandydaci"}>
-            {candidate ? "Moje aplikacje" : "Kandydaci"}
-          </BackLink>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page">{title}</span>
-        </nav>
-        <h1>{title}</h1>
+      <header className="record-head">
+        <BackLink to={candidate ? "/app/aplikacje" : "/app/kandydaci"}>
+          {candidate ? "Moje aplikacje" : "Kandydaci"}
+        </BackLink>
+        {candidate && <StepBar label="Etapy aplikowania" steps={candidateSteps} current="answer" />}
+        <h1 className="ds-title">{title}</h1>
         <div className="record-meta">
           <span>
             {context} · {companyName}
           </span>
-          <span className="record-stage" tabIndex={-1} ref={statusRef}>
+          <span className="record-stage" data-tone={tone} tabIndex={-1} ref={statusRef}>
             {stageLabels[application.stage]}
           </span>
           <MatchScore score={application.score} />
@@ -64,7 +66,7 @@ export function ApplicationRecord({
           )}
         </div>
       </header>
-      <div className="recruiting-layout">
+      <div className="record-layout">
         <RecordSheet
           label={candidate ? "Twoja wysłana aplikacja" : "Materiały kandydata"}
           sections={[
@@ -98,9 +100,11 @@ export function ApplicationRecord({
         >
           {children}
         </RecordSheet>
-        <aside className="recruiting-margin" aria-label="Historia i podsumowanie">
-          <section aria-labelledby="process-heading">
-            <h2 id="process-heading">Historia procesu</h2>
+        <aside className="record-margin" aria-label="Historia i podsumowanie">
+          <section className="ds-card" aria-labelledby="process-heading">
+            <div className="ds-card-head">
+              <h2 id="process-heading">Historia procesu</h2>
+            </div>
             <ProcessTimeline
               items={history.map((event, index) => ({
                 id: `${index}-${event.at}`,
@@ -110,12 +114,18 @@ export function ApplicationRecord({
               }))}
             />
           </section>
-          <section className="record-summary" aria-labelledby="summary-heading">
-            <h2 id="summary-heading">Podsumowanie</h2>
-            <p>{application.summary}</p>
+          <section className="ds-card record-summary" aria-labelledby="summary-heading">
+            <div className="ds-card-head">
+              <h2 id="summary-heading">Podsumowanie</h2>
+            </div>
+            <p style={{ margin: 0 }}>{application.summary}</p>
+            <p className="ds-caption">
+              podsumowanie i Match Score: DEMO · ocena zgodności tekstów, nie szansa na zatrudnienie
+            </p>
           </section>
         </aside>
       </div>
     </article>
   );
+  return candidate ? <Page>{page}</Page> : page;
 }

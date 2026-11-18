@@ -34,15 +34,15 @@ export function CvAttachment({
             <span>{contextLabel}</span>
           </div>
         </div>
-        <p className="cv-text whitespace-pre-wrap text-sm leading-relaxed">{fallbackText}</p>
+        <p className="cv-text">{fallbackText}</p>
       </div>
     ) : (
-      <p className="whitespace-pre-wrap text-sm leading-relaxed">{fallbackText}</p>
+      <p className="cv-text">{fallbackText}</p>
     );
   const href = `${import.meta.env.BASE_URL}cv/${filename}`;
   return (
     <div className="cv-attachment">
-      <div className={layout === "row" ? "cv-file-row" : "space-y-4"}>
+      <div className={layout === "row" ? "cv-file-row" : "cv-attachment"}>
         {layout === "row" ? (
           <>
             <FileText aria-hidden="true" size={24} />
@@ -52,9 +52,11 @@ export function CvAttachment({
             </div>
           </>
         ) : (
-          <p className="break-all text-sm text-muted-foreground">{filename} · PDF</p>
+          <p className="ds-meta" style={{ margin: 0, overflowWrap: "anywhere" }}>
+            {filename} · PDF
+          </p>
         )}
-        <div className="flex flex-wrap gap-3">
+        <div className="cv-actions">
           <a
             href={href}
             target="_blank"

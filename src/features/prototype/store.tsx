@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { initialState, transition, type Action, type State } from "./model";
-import { parseState, readState, saveState, type StoragePort } from "./storage";
+import { STORAGE_KEY, parseState, readState, saveState, type StoragePort } from "./storage";
 function browserStorage(): StoragePort | null {
   try {
     return window.localStorage;
@@ -53,6 +53,21 @@ function useStore() {
   }
   useEffect(() => {
     document.documentElement.classList.remove("dark");
+  }, []);
+  // The approval link is usually opened in another tab; pick up its saved decision here.
+  useEffect(() => {
+    function sync(event: StorageEvent) {
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      try {
+        const next = parseState(event.newValue);
+        latest.current = next;
+        setState(next);
+      } catch {
+        // Ignore unreadable writes from another tab; this tab keeps its valid state.
+      }
+    }
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
   return {
     state,

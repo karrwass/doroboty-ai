@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { usePrototype } from "./store";
 import { serializeState, MAX_IMPORT_BYTES } from "./storage";
-import { PageTitle } from "./shell";
+import { Page, PageTitle } from "./shell";
 
 export function downloadText(name: string, text: string, type = "application/json") {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -47,22 +47,26 @@ export function SettingsPage() {
     setPending(null);
   }
   return (
-    <>
-      <PageTitle>Ustawienia prototypu</PageTitle>
-      <section className="prototype-panel prototype-form">
-        <h2>Dane scenariusza</h2>
-        <p>
-          Zmiany są zapisane tylko w tej przeglądarce. Wysłanie linku innej osobie nie przenosi
-          Twoich danych. Eksport pozwala przekazać scenariusz lub zachować kopię przed resetem.
+    <Page>
+      <PageTitle lead="Zmiany są zapisane tylko w tej przeglądarce. Wysłanie linku innej osobie nie przenosi Twoich danych.">
+        Ustawienia prototypu
+      </PageTitle>
+      <section className="ds-card" aria-labelledby="data-title">
+        <h2 id="data-title" className="ds-h2c">
+          Dane scenariusza
+        </h2>
+        <p className="ds-sentence">
+          Eksport pozwala przekazać scenariusz lub zachować kopię. Jeśli zresetujesz albo
+          zaimportujesz dane, lokalne zmiany zostaną zastąpione.
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="ds-actions" style={{ marginTop: 0 }}>
           <Button
             variant="outline"
             onClick={() => downloadText("doroboty-scenariusz.json", serializeState(state))}
           >
             Eksportuj dane
           </Button>
-          <Button variant="outline" render={<label />}>
+          <label className="ds-btn ds-btn-secondary">
             Importuj dane
             <input
               className="sr-only"
@@ -71,7 +75,7 @@ export function SettingsPage() {
               aria-label="Importuj plik scenariusza"
               onChange={readFile}
             />
-          </Button>
+          </label>
           {original !== null && (
             <Button
               variant="outline"
@@ -82,20 +86,26 @@ export function SettingsPage() {
               Pobierz poprzedni zapis
             </Button>
           )}
+          <Button variant="destructive" onClick={() => setPending("reset")}>
+            Resetuj scenariusz
+          </Button>
         </div>
-        <Button variant="destructive" onClick={() => setPending("reset")}>
-          Resetuj scenariusz
-        </Button>
         {error && (
-          <p className="error-message" role="alert">
+          <p className="ds-error" role="alert" style={{ marginTop: "var(--space-3)" }}>
             {error}
           </p>
         )}
-        {message && <p role="status">{message}</p>}
+        {message && (
+          <p role="status" className="ds-meta" style={{ marginTop: "var(--space-3)" }}>
+            {message}
+          </p>
+        )}
       </section>
-      <section className="prototype-panel prototype-form mt-6">
-        <h2>O prototypie</h2>
-        <p>
+      <section className="ds-card ds-section" aria-labelledby="about-title">
+        <h2 id="about-title" className="ds-h2c">
+          O prototypie
+        </h2>
+        <p style={{ margin: 0 }}>
           Wybór osoby zastępuje logowanie. Propozycje AI, Match Score i podsumowania odtwarzają
           przygotowany scenariusz; nie oceniają kompetencji. Używaj przykładowych danych i CV.
         </p>
@@ -111,15 +121,15 @@ export function SettingsPage() {
         pending={false}
         onConfirm={confirm}
       />
-    </>
+    </Page>
   );
 }
 export function PrivacyPage() {
   return (
-    <section className="prototype-section max-w-4xl">
-      <h1>Prywatność prototypu</h1>
-      <div className="mt-6 space-y-5">
-        <p>
+    <Page>
+      <h1 className="ds-title">Prywatność prototypu</h1>
+      <section className="ds-card" aria-label="Zasady prywatności">
+        <p style={{ marginTop: 0 }}>
           Ta wersja służy do ćwiczeń i testów interfejsu. Nie wpisuj prawdziwych danych osobowych
           ani poufnych informacji.
         </p>
@@ -128,11 +138,11 @@ export function PrivacyPage() {
           ich do bazy, dostawcy AI ani systemu analitycznego. Plik eksportu zawiera cały lokalny
           scenariusz, w tym notatki.
         </p>
-        <p>
+        <p style={{ marginBottom: 0 }}>
           Możesz usunąć zmiany przyciskiem „Resetuj scenariusz” w ustawieniach lub wyczyścić dane
           witryny w przeglądarce. Hosting może prowadzić własne logi dostępu.
         </p>
-      </div>
-    </section>
+      </section>
+    </Page>
   );
 }

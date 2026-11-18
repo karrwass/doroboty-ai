@@ -1,0 +1,61 @@
+/*
+ * Bridge from the previous host token layer (tokens.css at the repo root: --gui-*, shadcn
+ * semantic names) to DoRoboty Design tokens. Shared primitives and any remaining utility
+ * classes then render in the new system. Loaded after both token files.
+ */
+:root {
+  /* shadcn semantic roles */
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--action);
+  --primary-foreground: #fff;
+  --secondary: var(--tag-cool);
+  --secondary-foreground: var(--ink);
+  --muted: var(--tag-cool);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--action-soft);
+  --accent-foreground: var(--ink);
+  --destructive: var(--err);
+  --border: var(--rule);
+  --input: var(--border-control);
+  --ring: var(--focus);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-border: var(--rule);
+
+  /* type: one family */
+  --font-body: var(--font);
+  --font-display: var(--font);
+  --font-interface: var(--font);
+  --gui-font-ui: var(--font);
+  --gui-font-brand: var(--font);
+
+  /* previous host roles used directly by components */
+  --gui-text: var(--ink);
+  --gui-text-muted: var(--ink-3);
+  --gui-text-muted-accessible: var(--ink-3);
+  --gui-link: var(--action);
+  --gui-focus: var(--focus);
+  --gui-canvas: var(--canvas);
+  --gui-surface: var(--surface);
+  --gui-surface-muted: var(--tag-cool);
+  --gui-control: var(--surface);
+  --gui-control-hover: var(--canvas);
+  --gui-control-disabled: var(--canvas);
+  --gui-control-readonly: var(--canvas);
+  --gui-edge: var(--border-control);
+  --gui-edge-shadow: inset 0 0 0 1px var(--border-control);
+  --gui-error: var(--err);
+  --gui-error-transparent: var(--err-soft);
+  --gui-warning-transparent: var(--info-soft);
+  --gui-color-1: var(--action-soft);
+  --gui-color-1-transparent: var(--action-soft);
+  --gui-backdrop: rgba(28, 29, 38, 0.4);
+  --gui-shadow-m: var(--shadow-float);
+  /* one line-icon set, 1.5px stroke */
+  --icon-stroke-width: 1.5;
+}

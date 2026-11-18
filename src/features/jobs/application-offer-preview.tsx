@@ -1,47 +1,41 @@
-import { ChevronDown, MapPin } from "lucide-react";
+import { CategoryTag } from "@/design-system/components";
 import { CompanyLogo } from "./company-logo";
 import { JobDescription } from "./job-description";
-import { SalaryFact } from "./salary-fact";
-import { categoryLabels, remoteLabels, seniorityLabels } from "./presentation";
+import { salaryBasis, salaryRange } from "./salary-fact";
+import { remoteLabels, seniorityLabels } from "./presentation";
 import type { JobWithCompany } from "./types";
 
+/** Job ad card in compact form, shown next to the application form (same component family). */
 export function ApplicationOfferPreview({ job }: { job: JobWithCompany }) {
+  const pay = salaryRange(job);
   return (
-    <aside className="record-sheet application-offer" aria-labelledby="application-offer-title">
-      <p className="application-eyebrow">Oferta, na którą aplikujesz</p>
-      <div className="application-company">
-        <CompanyLogo company={job.company} />
-        <span>{job.company.name}</span>
+    <aside className="ds-card" aria-labelledby="application-offer-title">
+      <p className="ds-eyebrow">Oferta, na którą aplikujesz</p>
+      <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start" }}>
+        <CompanyLogo company={job.company} size="small" />
+        <div style={{ minWidth: 0 }}>
+          <h2 id="application-offer-title" className="ds-jobcard-title">
+            {job.title}
+          </h2>
+          <p className="ds-meta" style={{ margin: "2px 0 0" }}>
+            {job.company.name} · {job.locations.join(" / ")}
+          </p>
+        </div>
       </div>
-      <h2 id="application-offer-title">{job.title}</h2>
-      <p className="application-location">
-        <MapPin size={16} aria-hidden="true" />
-        {job.locations.join(" / ")}
-      </p>
-      <div className="application-pay">
-        <SalaryFact job={job} />
-      </div>
-      <dl className="application-offer-facts">
-        <div>
-          <dt>Tryb pracy</dt>
-          <dd>{remoteLabels[job.remoteStatus]}</dd>
+      <ul className="ds-tags" aria-label="Najważniejsze fakty">
+        <CategoryTag category={job.category} />
+        <li className="ds-tag">{remoteLabels[job.remoteStatus]}</li>
+        <li className="ds-tag">{seniorityLabels[job.seniority]}</li>
+        <li className="ds-tag">
+          {pay ? `${pay} · ${salaryBasis(job)}` : "Nie podano wynagrodzenia"}
+        </li>
+      </ul>
+      <p style={{ marginBottom: 0 }}>{job.summary}</p>
+      <details className="ds-details">
+        <summary>Pełny opis oferty</summary>
+        <div className="ds-reading">
+          <JobDescription description={job.description} compact />
         </div>
-        <div>
-          <dt>Doświadczenie</dt>
-          <dd>{seniorityLabels[job.seniority]}</dd>
-        </div>
-        <div>
-          <dt>Kategoria</dt>
-          <dd>{categoryLabels[job.category]}</dd>
-        </div>
-      </dl>
-      <p className="application-offer-summary">{job.summary}</p>
-      <details className="application-description">
-        <summary>
-          Pełny opis oferty
-          <ChevronDown size={16} aria-hidden="true" />
-        </summary>
-        <JobDescription description={job.description} compact />
       </details>
     </aside>
   );
