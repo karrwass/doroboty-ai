@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+
+// Optional local override: PLAYWRIGHT_CHANNEL=msedge (or chrome) runs the journeys on an
+// installed Chromium-based browser instead of the downloaded Playwright Chromium. CI leaves it unset.
+const channel = process.env.PLAYWRIGHT_CHANNEL || undefined;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -11,7 +16,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], channel } }],
   webServer: {
     command: "npm run preview -- --port 3106",
     url: "http://127.0.0.1:3106",

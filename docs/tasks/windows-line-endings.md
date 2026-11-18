@@ -18,3 +18,7 @@
 ## Result (2026-11-18)
 
 All of the above passed. Browser journeys: 37/37 passed on the installed Microsoft Edge through a temporary, git-ignored `artifacts/pw-msedge.config.ts`, because Playwright Chromium is not provisioned on this machine; an unmodified `./scripts/verify` still needs it. FEATURES.md was reviewed and needs no update (no behavior change).
+
+## Follow-up: local Edge channel (2026-11-18)
+
+Product owner chose Edge for local Windows runs instead of downloading Playwright Chromium. `playwright.config.ts` reads an optional `PLAYWRIGHT_CHANNEL` (for example `msedge`); unset, it behaves exactly as before, so CI is unchanged. The participant guide explains the PowerShell and Git Bash invocations. The temporary `artifacts/pw-msedge.config.ts` was removed. FEATURES.md reviewed: no product behavior change.
